@@ -1,0 +1,377 @@
+{
+  "monitor": {
+    "description": "状态监控",
+    "type": "object",
+    "default": {},
+    "items": {
+      "interval": {
+        "description": "采样间隔（秒）",
+        "hint": "后台采样 CPU、内存、网络和磁盘 IO 的间隔，最小 5 秒。",
+        "type": "int",
+        "default": 60
+      },
+      "history_size": {
+        "description": "保留数据点数量",
+        "hint": "每个指标保留的历史点数，60 个点约等于最近 1 小时。",
+        "type": "int",
+        "default": 60
+      }
+    }
+  },
+  "systemResources": {
+    "description": "显示的系统资源",
+    "hint": "选择状态卡片主硬件区显示的圆环，GPU 获取不到时会自动隐藏。",
+    "type": "list",
+    "options": [
+      "CPU",
+      "RAM",
+      "SWAP",
+      "GPU"
+    ],
+    "default": [
+      "CPU",
+      "RAM",
+      "SWAP",
+      "GPU"
+    ]
+  },
+  "processLoad": {
+    "description": "进程负载",
+    "type": "object",
+    "default": {},
+    "items": {
+      "show": {
+        "description": "显示进程负载",
+        "type": "bool",
+        "default": true
+      },
+      "showMax": {
+        "description": "进程列表",
+        "type": "object",
+        "default": {},
+        "items": {
+          "show": {
+            "description": "显示 Top 进程",
+            "type": "bool",
+            "default": true
+          },
+          "showNum": {
+            "description": "显示数量",
+            "type": "int",
+            "default": 6
+          },
+          "order": {
+            "description": "排序方式",
+            "type": "string",
+            "options": [
+              "cpu",
+              "mem",
+              "cpu_mem"
+            ],
+            "labels": [
+              "CPU",
+              "内存",
+              "CPU + 内存各一半"
+            ],
+            "default": "mem"
+          }
+        }
+      },
+      "showCmd": {
+        "description": "显示完整命令",
+        "hint": "开启后进程名会替换为完整命令行。",
+        "type": "bool",
+        "default": false
+      },
+      "filterList": {
+        "description": "过滤进程名",
+        "hint": "精确匹配的进程名会被隐藏。",
+        "type": "list",
+        "default": [
+          "System Idle Process"
+        ]
+      },
+      "list": {
+        "description": "固定显示的进程",
+        "hint": "填写进程名或命令行包含的文本，会额外追加到进程列表。",
+        "type": "list",
+        "default": [
+          "node",
+          "python",
+          "redis-server",
+          "chromium"
+        ]
+      }
+    }
+  },
+  "showFastFetch": {
+    "description": "显示系统信息区",
+    "hint": "优先调用 fastfetch；未安装时使用 Python 生成等价信息。",
+    "type": "bool",
+    "default": true
+  },
+  "psTestSites": {
+    "description": "网络测试",
+    "type": "object",
+    "default": {},
+    "items": {
+      "show": {
+        "description": "显示网络测试",
+        "type": "bool",
+        "default": true
+      },
+      "timeout": {
+        "description": "超时时间（毫秒）",
+        "type": "int",
+        "default": 5000
+      },
+      "concurNum": {
+        "description": "并发数量",
+        "type": "int",
+        "default": 5
+      },
+      "list": {
+        "description": "测试站点",
+        "type": "template_list",
+        "templates": {
+          "site": {
+            "name": "网站",
+            "display_item": "name",
+            "items": {
+              "name": {
+                "description": "显示名称",
+                "type": "string",
+                "default": ""
+              },
+              "url": {
+                "description": "网址",
+                "type": "string",
+                "default": ""
+              },
+              "useProxy": {
+                "description": "使用代理",
+                "type": "bool",
+                "default": false
+              }
+            }
+          }
+        },
+        "default": [
+          {
+            "__template_key": "site",
+            "name": "Baidu",
+            "url": "https://baidu.com",
+            "useProxy": false
+          },
+          {
+            "__template_key": "site",
+            "name": "Google",
+            "url": "https://google.com",
+            "useProxy": false
+          }
+        ]
+      }
+    }
+  },
+  "chartsCfg": {
+    "description": "图表",
+    "type": "object",
+    "default": {},
+    "items": {
+      "show": {
+        "description": "在状态卡片中显示网络图表",
+        "type": "bool",
+        "default": true
+      },
+      "color": {
+        "description": "图表调色盘",
+        "type": "list",
+        "default": [
+          "#2ec7c9",
+          "#b6a2de"
+        ]
+      }
+    }
+  },
+  "style": {
+    "description": "样式",
+    "type": "object",
+    "default": {},
+    "items": {
+      "backdrop": {
+        "description": "背景图片 API",
+        "hint": "留空则只使用本地背景。默认使用 yenai 的随机背景 API。",
+        "type": "string",
+        "default": "https://t.alcy.cc/mp"
+      },
+      "backdropDefault": {
+        "description": "背景兜底",
+        "hint": "random 表示随机选择 resources/state/img/bg 中的图片。",
+        "type": "string",
+        "default": "random"
+      },
+      "backdropTimeout": {
+        "description": "背景请求超时（秒）",
+        "type": "int",
+        "default": 8
+      },
+      "backdropCacheTTL": {
+        "description": "背景缓存时间（秒）",
+        "type": "int",
+        "default": 300
+      },
+      "backdropWarmup": {
+        "description": "启动时预取背景",
+        "type": "bool",
+        "default": true
+      },
+      "BotNameColor": {
+        "description": "Bot 昵称颜色",
+        "hint": "支持 gradient: 开头的渐变，例如 gradient:271.14deg,#001bff,#00f0ff。",
+        "type": "string",
+        "default": "#000"
+      },
+      "startColumn": {
+        "description": "启用多列布局",
+        "hint": "关闭时渲染为一张长图；开启后按 1700/2900/4500px 高度自动分栏。",
+        "type": "bool",
+        "default": false
+      },
+      "redisInfoValColor": {
+        "description": "Redis 信息值颜色",
+        "hint": "兼容 yenai 配置项，当前版本不显示 Redis。",
+        "type": "string",
+        "default": "#485ab6"
+      },
+      "progressBarColor": {
+        "description": "进度条颜色",
+        "type": "object",
+        "default": {},
+        "items": {
+          "high": {
+            "description": "高占用颜色",
+            "type": "string",
+            "default": "#d73403"
+          },
+          "medium": {
+            "description": "中占用颜色",
+            "type": "string",
+            "default": "#ffa500"
+          },
+          "low": {
+            "description": "低占用颜色",
+            "hint": "可以填写多个颜色，按顺序循环使用。",
+            "type": "list",
+            "default": [
+              "#84A0DF",
+              "#2EC272",
+              "#8070F9"
+            ]
+          }
+        }
+      },
+      "botInfoColor": {
+        "description": "Bot 信息标签颜色",
+        "type": "object",
+        "default": {},
+        "items": {
+          "botVersion": {
+            "description": "版本标签颜色",
+            "type": "string",
+            "default": "#FBE0F3"
+          },
+          "platform": {
+            "description": "平台标签颜色",
+            "type": "string",
+            "default": "#F0EDF2"
+          },
+          "contacts": {
+            "description": "联系人标签颜色",
+            "type": "list",
+            "default": [
+              "#F1EDFE",
+              "#FDF1E6",
+              "#E9F4FC"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "bot": {
+    "description": "Bot 信息覆盖",
+    "type": "object",
+    "default": {},
+    "items": {
+      "name": {
+        "description": "Bot 名称",
+        "hint": "留空则自动获取；多平台时可统一覆盖显示名称。",
+        "type": "string",
+        "default": ""
+      },
+      "avatar": {
+        "description": "Bot 头像",
+        "hint": "填写图片 URL 或本地绝对路径；留空则自动获取。",
+        "type": "string",
+        "default": ""
+      }
+    }
+  },
+  "hostname": {
+    "description": "主机信息覆盖",
+    "type": "object",
+    "default": {},
+    "items": {
+      "override": {
+        "description": "主机名",
+        "hint": "Docker 容器内主机名可能是容器 ID，可在这里覆盖。",
+        "type": "string",
+        "default": ""
+      }
+    }
+  },
+  "embed_font": {
+    "description": "内嵌 FZB / NZBZ 字体",
+    "hint": "开启后最接近 yenai 原版，但每次渲染请求体会增加约 2MB。",
+    "type": "bool",
+    "default": true
+  },
+  "render": {
+    "description": "渲染参数",
+    "type": "object",
+    "default": {},
+    "items": {
+      "quality": {
+        "description": "JPEG 质量",
+        "type": "int",
+        "default": 90
+      },
+      "viewport_width": {
+        "description": "状态卡片视口宽度",
+        "hint": "yenai 卡片在 1.4 倍缩放下约 1050px 宽，1000 可避免单列时出现右侧留白。",
+        "type": "int",
+        "default": 1000
+      },
+      "monitor_viewport_width": {
+        "description": "监控页视口宽度",
+        "type": "int",
+        "default": 900
+      },
+      "device_scale_factor_level": {
+        "description": "清晰度",
+        "type": "string",
+        "options": [
+          "normal",
+          "high",
+          "ultra"
+        ],
+        "labels": [
+          "普通",
+          "高清",
+          "超清"
+        ],
+        "default": "high"
+      }
+    }
+  }
+}

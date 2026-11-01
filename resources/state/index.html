@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>AstrBot 状态</title>
+<style>{{ common_css|safe }}</style>
+<style>{{ index_css|safe }}</style>
+<style>
+  .container {
+    background-image: {{ style.backdrop|safe }};
+  }
+</style>
+</head>
+<body>
+<div class="container" id="container">
+  {% for bot in BotStatusList %}
+  <div class="box">
+    <div class="botInfo">
+      <div class="avatar-box">
+        <div class="avatar">
+          <img src="{{ bot.avatar }}">
+        </div>
+        <div class="onlineStatus">
+          <img src="{{ icons[bot.status] }}">
+        </div>
+      </div>
+      <div class="header">
+        <h1>
+          <div class="name">{{ bot.nickname }}</div>
+        </h1>
+        <p>
+          <span class="botVersion">
+            <img src="{{ icons['机器人'] }}">
+            {{ bot.botVersion }}
+          </span>
+          {% if bot.platform %}
+          <span class="platform">
+            <img src="{{ icons['platform'] }}">
+            {{ bot.platform }}
+          </span>
+          <span class="botrunTime">
+            <img src="{{ icons['时间'] }}">
+            Bot已运行 {{ bot.botRunTime }}
+          </span>
+          {% endif %}
+        </p>
+        <p>
+          {% for key, value in bot.countContacts.items() %}
+          {% if value %}
+          <span class="contacts">
+            <img src="{{ icons[bot.contact_icons[key]] }}">
+            {{ value|safe }}
+          </span>
+          {% endif %}
+          {% endfor %}
+          {% for key, value in bot.messageCount.items() %}
+          {% if value %}
+          <span class="contacts">
+            <img src="{{ icons[bot.message_icons[key]] }}">
+            {{ value|safe }}
+          </span>
+          {% endif %}
+          {% endfor %}
+        </p>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="box clear-style" data-boxInfo="系统信息">
+    <div>
+      <div class="sysTitle">
+        <img src="{{ icons['系统'] }}" class="icon">
+        系统
+      </div>
+      <div class="sysData">
+        <div class="main">{{ otherInfo.osInfo.main }}</div>
+        <div class="secondary">{{ otherInfo.osInfo.secondary }}</div>
+      </div>
+    </div>
+    <div>
+      <div class="sysTitle">
+        <img src="{{ icons['主机名'] }}" class="icon">
+        主机名
+      </div>
+      <div class="sysData">
+        <div class="main">{{ otherInfo.hostname.main }}</div>
+      </div>
+    </div>
+    <div>
+      <div class="sysTitle">
+        <img src="{{ icons['time'] }}" class="icon">
+        运行时间
+      </div>
+      <div class="sysData">
+        <div class="main">{{ otherInfo.sysTime.main }}</div>
+        <div class="secondary">{{ otherInfo.sysTime.secondary }}</div>
+      </div>
+    </div>
+    <div>
+      <div class="sysTitle">
+        <img src="{{ icons['插件'] }}" class="icon">
+        插件数
+      </div>
+      <div class="sysData">
+        <div class="main">{{ otherInfo.pluginNum.main }}</div>
+        <div class="secondary">{{ otherInfo.pluginNum.secondary }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box" data-boxInfo="主硬件">
+    <div class="title"><img src="{{ icons['资源'] }}" class="icon">资源使用</div>
+    <ul class="mainHardware">
+      {% for group in visualData %}
+      <li class="li">
+        <div class="container-box" data-num="{{ group.inner }}" id="box">
+          <div class="circle-outer"></div>
+          <svg>
+            {% if group.title == "RAM" and group.buffcache and group.buffcache.isBuff %}
+            <circle id="circle" stroke="{{ group.buffcache.percentage.color }}"
+              style="stroke-dashoffset:{{ group.buffcache.percentage.per }}"></circle>
+            {% endif %}
+            <circle id="circle" stroke="{{ group.percentage.color }}"
+              style="stroke-dashoffset:{{ group.percentage.per }}"></circle>
+          </svg>
+        </div>
+        <article>
+          <summary>{{ group.title }}</summary>
+          {% if group.detailed %}
+          <div class="detailed">{{ group.detailed }}</div>
+          {% endif %}
+          {% for info in group.info %}
+          {% if info %}
+          <p>{{ info }}</p>
+          {% endif %}
+          {% endfor %}
+        </article>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  {% if disks.disksSize %}
+  <div class="box memory" data-boxInfo="磁盘">
+    <div class="title">
+      <img src="{{ icons['磁盘'] }}" class="icon">
+      磁盘使用
+    </div>
+    <ul>
+      {% for disk in disks.disksSize %}
+      <li class="HardDisk_li">
+        <div class="left">
+          <div class="container-box" data-num="{{ disk.use }}%" id="box">
+            <div class="circle-outer"></div>
+            <svg>
+              <circle id="circle" stroke="{{ disk.color }}" style="stroke-dashoffset:{{ disk.per }}"></circle>
+            </svg>
+          </div>
+        </div>
+        <div class="right">
+          <div class="fs">
+            <div class="name mount">{{ disk.mount }}</div>
+            <div class="size">{{ disk.used }} / {{ disk.size }}</div>
+          </div>
+          <div class="progress">
+            <div class="bar" style="width: {{ disk.use }}%;background: {{ disk.color }};"></div>
+          </div>
+          <div class="fsInfo">
+            <div>
+              <div class="icon" style="background: {{ disk.color }};"></div>
+              已使用 {{ disk.used }}
+            </div>
+            <div>
+              <div class="icon" style="background: #8E8691;"></div>
+              未使用 {{ disk.available }}
+            </div>
+            <div>文件系统 {{ disk.type }} </div>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if disks.disksIo %}
+    {% for io in disks.disksIo %}
+    <div class="speed">
+      <p>{{ io.name }}</p>
+      <p>R {{ io.rIO_sec|safe }}/s - W {{ io.wIO_sec|safe }}/s{% if io.tIO_sec %} - T {{ io.tIO_sec|safe }}/s{% endif %}</p>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if network.speed or network.psTest %}
+  <div class="box" data-boxInfo="网络">
+    {% if network.speed %}
+    <div class="networkInfo">
+      <div class="title">
+        <img src="{{ icons['网络'] }}" class="icon">
+        网络状态
+      </div>
+      {% if network.chart_svg %}
+      <div class="chartBox">
+        {{ network.chart_svg|safe }}
+      </div>
+      {% endif %}
+      <div class="data">
+        <div class="upload">
+          <div class="icon">
+            <img src="{{ icons['上传'] }}">
+          </div>
+          <div class="info">
+            <p class="text">上传速度</p>
+            <p class="networkData">{{ network.speed.speed.upload.size }}<span class="unit">{{ network.speed.speed.upload.suffix }}/s</span></p>
+          </div>
+        </div>
+        <div class="download">
+          <div class="icon">
+            <img src="{{ icons['下载'] }}">
+          </div>
+          <div class="info">
+            <p class="text">下载速度</p>
+            <p class="networkData">{{ network.speed.speed.download.size }}<span class="unit">{{ network.speed.speed.download.suffix }}/s</span></p>
+          </div>
+        </div>
+        {% if network.speed.traffic %}
+        <div class="uploadVolume">
+          <div class="icon">
+            <img src="{{ icons['上传流量'] }}">
+          </div>
+          <div class="info">
+            <p class="text">上传量</p>
+            <p class="networkData">{{ network.speed.traffic.upload.size }}<span class="unit">{{ network.speed.traffic.upload.suffix }}</span></p>
+          </div>
+        </div>
+        <div class="downloadVolume">
+          <div class="icon">
+            <img src="{{ icons['下载流量'] }}">
+          </div>
+          <div class="info">
+            <p class="text">下载量</p>
+            <p class="networkData">{{ network.speed.traffic.download.size }}<span class="unit">{{ network.speed.traffic.download.suffix }}</span></p>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% if network.psTest %}
+    <div class="psTest">
+      <div class="title">
+        <img src="{{ icons['网络测试'] }}" class="icon">
+        网站测试
+      </div>
+      <div class="data">
+        <div class="row header-row">
+          <div class="cell">网址</div>
+          <div class="cell">状态码</div>
+          <div class="cell">延迟</div>
+        </div>
+        {% for site in network.psTest %}
+        <div class="row">
+          <div class="cell">{{ site.name }}</div>
+          <div class="cell">{{ site.status|safe }}</div>
+          <div class="cell">{{ site.delay|safe }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if processLoad %}
+  <div class="box" data-boxInfo="进程负载">
+    <div class="info">
+      <div class="title">
+        <img src="{{ icons['进程信息'] }}" class="icon">
+        进程信息
+      </div>
+      <div class="list">
+        <div>全部: <span style="color: #333333;">{{ processLoad.all }}</span></div>
+        <div>运行中: <span style="color: #54ad57;">{{ processLoad.running }}</span></div>
+        <div>阻塞: <span style="color: #cc8823;">{{ processLoad.blocked }}</span></div>
+        <div>休眠: <span style="color: #3698e8;">{{ processLoad.sleeping }}</span></div>
+        <div>未知: <span>{{ processLoad.unknown }}</span></div>
+      </div>
+    </div>
+    <div class="process">
+      <div class="title">
+        <img src="{{ icons['进程列表'] }}" class="icon">
+        进程列表
+      </div>
+      <div class="form">
+        <div class="row header-row">
+          <div class="cell">Name</div>
+          <div class="cell">Pid</div>
+          <div class="cell" data-sort="{{ 'true' if processLoad.order == 'cpu' else 'false' }}">CPU</div>
+          <div class="cell" data-sort="{{ 'true' if processLoad.order == 'mem' else 'false' }}">MEM</div>
+        </div>
+        {% for proc in processLoad.list %}
+        {% if proc == "hr" %}
+        <hr style="margin: 5px 0" />
+        {% else %}
+        <div class="row" data-state="{{ proc.state }}">
+          <div class="cell">{{ proc.name }}</div>
+          {% if proc.pid is not none %}
+          <div class="cell">{{ proc.pid }}</div>
+          {% endif %}
+          <div class="cell">{{ proc.cpu }}</div>
+          <div class="cell">{{ proc.mem }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if fastFetch %}
+  <div class="box fastFetch" data-boxInfo="FastFetch">
+    <div class="title">
+      <img src="{{ icons['设置'] }}" class="icon">系统信息
+    </div>
+    <div class="content">
+      {% for item in fastFetch %}
+      <div class="speed">
+        <p>
+          {% if item.icon %}
+          <span class="icon" style="color:{{ item.icon.color }}">{{ item.icon.icon }}</span>
+          {% endif %}
+          {{ item.key }}
+        </p>
+        <p>{{ item.value }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="copyright">{{ copyright|safe }}</div>
+</div>
+<script>
+var Config = {{ config_json|safe }};
+{{ style_js|safe }}
+</script>
+</body>
+</html>

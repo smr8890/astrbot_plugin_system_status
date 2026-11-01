@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width">
+<title>AstrBot 监控</title>
+<style>{{ common_css|safe }}</style>
+<style>{{ index_css|safe }}</style>
+<style>
+  .container {
+    background-image: {{ style.backdrop|safe }};
+  }
+  .head-box {
+    margin-top: 0;
+  }
+  .chart-box {
+    padding: 8px 6px 4px;
+  }
+  .chart-box svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .chart-empty {
+    padding: 80px 20px;
+    text-align: center;
+    color: #666;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+<div class="container" id="container">
+  <div class="box">
+    <div class="head-box">
+      <div class="title">AstrBot 监控</div>
+      <div class="label">CPU &amp; RAM &amp; Network &amp; Disk IO</div>
+    </div>
+  </div>
+  {% for chart in charts %}
+  <div class="box chart-box">
+    {{ chart.svg|safe }}
+  </div>
+  {% endfor %}
+  <div class="copyright">{{ copyright|safe }}</div>
+</div>
+</body>
+</html>

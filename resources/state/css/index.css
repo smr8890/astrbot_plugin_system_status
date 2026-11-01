@@ -1,0 +1,887 @@
+@charset "UTF-8";
+:root {
+  --bg: rgba(255, 255, 255);
+  /* 背景颜色 */
+  --back-bg: #c5ccda;
+  /* 定义宽度 */
+  --w: 110px;
+  --back-shadow: #fff;
+  /* 父容器gap间距 */
+  --gap: 8px;
+  /* 第二层圆形宽度 */
+  --inner: calc(var(--w) - var(--gap));
+  /* 文本颜色 */
+  --text-color: #514f4f;
+  /* 定义stroke的宽度 */
+  --stroke: 12px;
+  /* svg环形宽度 更正内容*/
+  --circle: calc(var(--inner) - var(--stroke));
+  /* 第三层圆形宽度 */
+  --center: calc(var(--circle) - var(--stroke));
+}
+
+.mainHardware,
+.HardDisk_li .left {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+.mainHardware .container-box,
+.HardDisk_li .left .container-box {
+  width: var(--w);
+  height: var(--w);
+  position: relative;
+}
+.mainHardware,
+.HardDisk_li .left {
+  /* 添加百分比显示文字 */
+}
+.mainHardware .container-box::after,
+.HardDisk_li .left .container-box::after {
+  content: attr(data-num);
+  position: absolute;
+  font-size: 20px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-color);
+  font-weight: 700;
+}
+.mainHardware .circle-outer,
+.HardDisk_li .left .circle-outer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--bg);
+}
+.mainHardware .circle-outer::before,
+.HardDisk_li .left .circle-outer::before {
+  width: var(--inner);
+  height: var(--inner);
+  box-shadow: inset 8px 8px 10px var(--back-bg), inset -4px -4px 8px var(--back-shadow);
+}
+.mainHardware .circle-outer::after,
+.HardDisk_li .left .circle-outer::after {
+  width: var(--center);
+  height: var(--center);
+  box-shadow: 6px 6px 8px var(--back-bg), -2px -2px 8px var(--back-shadow);
+}
+.mainHardware,
+.HardDisk_li .left {
+  /* 合并代码 */
+}
+.mainHardware .circle-outer::before,
+.mainHardware .circle-outer::after,
+.HardDisk_li .left .circle-outer::before,
+.HardDisk_li .left .circle-outer::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--bg);
+}
+.mainHardware svg,
+.HardDisk_li .left svg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  transform: rotate(-90deg);
+}
+.mainHardware svg circle,
+.HardDisk_li .left svg circle {
+  cy: calc(var(--circle) / 2);
+  cx: calc(var(--circle) / 2);
+  r: calc(var(--circle) / 2);
+  fill: none;
+  /* 圆角 */
+  stroke-linecap: round;
+  position: absolute;
+  --z: calc(var(--w) / 2);
+  --c: calc(var(--circle) / 2);
+  transform: translate(calc(var(--z) - var(--c)), calc(var(--z) - var(--c)));
+  /* 圆的周长 */
+  stroke-dasharray: calc(3.14 * var(--circle));
+  stroke-dashoffset: calc(3.14 * var(--circle));
+  stroke-width: var(--stroke);
+}
+.mainHardware article,
+.HardDisk_li .left article {
+  width: 100px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+}
+.mainHardware article summary,
+.HardDisk_li .left article summary {
+  font-size: 22px;
+  margin-top: 5px;
+  font-weight: 700;
+}
+.mainHardware article .detailed,
+.HardDisk_li .left article .detailed {
+  font-size: 12px;
+  color: #5f5d5d;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+.mainHardware article p,
+.HardDisk_li .left article p {
+  font-size: 12px;
+  color: #2f4f4f;
+  margin-top: 5px;
+}
+.mainHardware .li,
+.HardDisk_li .left .li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fastFetch .content, .box[data-boxInfo=网络] .psTest .data, .box[data-boxInfo=网络] .networkInfo .chartBox,
+.box[data-boxInfo=网络] .networkInfo .data > div, .memory .speed, .memory li, .box[data-boxInfo=redis] .data, .box[data-boxInfo=进程负载] .process .form, .box[data-boxInfo=进程负载] .info .list div {
+  background-color: rgba(255, 255, 255, 0.646);
+  border-radius: 10px;
+  box-shadow: rgba(0, 0, 0, 0.3294117647) -1px 1px 2px;
+}
+
+.speed p, .HardDisk_li .mount, .botInfo .header h1 .name, .box[data-boxInfo=进程负载] .process .form .cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root {
+  --high-color: #d73403;
+  --medium-color: #ffa500;
+  --low-color: #84A0DF;
+  --avatar-main-color: #fff1eb;
+  --avatar-similar-color1: #fff1eb;
+  --avatar-similar-color2: #ace0f9;
+  --purple: #B4A0D8b3;
+  --orange: #e0be92b3;
+  --blue: #aad5e6b3;
+}
+
+body {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-around;
+  color: #000;
+}
+
+.container {
+  background-image: none;
+  background-color: #e9e9e9;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 650px;
+}
+.container > .box:nth-child(2) {
+  margin-top: 0;
+}
+.container {
+  position: relative;
+}
+
+li {
+  list-style: none;
+}
+
+.box[data-boxInfo=系统信息] > div, .box:not(.clear-style) {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 8px 32px 0 rgba(51, 51, 52, 0.5), inset 3px 3px 10px 0px rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.box {
+  margin: 20px 10px;
+  position: relative;
+}
+.box:not(.clear-style) {
+  padding: 10px;
+}
+.box {
+  -moz-column-break-inside: avoid;
+       break-inside: avoid;
+  display: block;
+}
+.box .time {
+  position: absolute;
+  right: 20px;
+  top: -30px;
+  font-size: 11px;
+  color: #0e0e0e;
+  text-shadow: 1px 1px 2px #fff;
+  font-weight: 700;
+}
+
+.box[data-boxInfo=主硬件] .title {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+  margin-bottom: 10px;
+}
+.box[data-boxInfo=主硬件] .title .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 7px;
+}
+
+.box[data-boxInfo=进程负载] .title {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+}
+.box[data-boxInfo=进程负载] .title .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 7px;
+}
+.box[data-boxInfo=进程负载] .info .title {
+  margin-bottom: 10px;
+}
+.box[data-boxInfo=进程负载] .info .list {
+  display: flex;
+  justify-content: space-around;
+  margin: 10px 20px;
+  font-size: 17px;
+  gap: 20px;
+  text-align: center;
+}
+.box[data-boxInfo=进程负载] .info .list div {
+  border-radius: 5px;
+  padding: 5px 10px;
+  color: #4f5255;
+  flex: 1;
+}
+.box[data-boxInfo=进程负载] .process .title {
+  margin: 10px 0;
+}
+.box[data-boxInfo=进程负载] .process .form {
+  display: flex;
+  flex-direction: column;
+  font-size: 16px;
+  margin: 0px 10px;
+  padding: 5px 10px;
+}
+.box[data-boxInfo=进程负载] .process .form .row {
+  display: flex;
+}
+.box[data-boxInfo=进程负载] .process .form .row[data-state=running] {
+  color: rgb(58, 159, 62);
+}
+.box[data-boxInfo=进程负载] .process .form .row[data-state=blocked] {
+  color: rgb(204, 136, 35);
+}
+.box[data-boxInfo=进程负载] .process .form .header-row {
+  font-size: 17px;
+  color: #494d53;
+}
+.box[data-boxInfo=进程负载] .process .form .header-row .cell[data-sort=true] {
+  position: relative;
+}
+.box[data-boxInfo=进程负载] .process .form .header-row .cell[data-sort=true]::after {
+  content: "▼";
+  position: absolute;
+  margin-left: 5px;
+  color: #494d53;
+}
+.box[data-boxInfo=进程负载] .process .form .cell {
+  flex: 1;
+  padding: 5px;
+  text-align: left;
+}
+.box[data-boxInfo=进程负载] .process .form .cell:first-child {
+  flex: 2;
+}
+.box[data-boxInfo=进程负载] .process .form .cell:nth-child(3), .box[data-boxInfo=进程负载] .process .form .cell:nth-child(4) {
+  text-align: center;
+}
+
+.box[data-boxInfo=redis] .title {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+  margin-bottom: 10px;
+}
+.box[data-boxInfo=redis] .title .icon {
+  width: 18px;
+  height: 18px;
+  margin-right: 5px;
+}
+.box[data-boxInfo=redis] .data {
+  padding: 10px;
+  margin: 5px 10px;
+}
+.box[data-boxInfo=redis] > .data {
+  display: flex;
+  height: 170px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #232323;
+}
+.box[data-boxInfo=redis] > .data > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+.box[data-boxInfo=redis] > .data .info {
+  padding-right: 20px;
+}
+.box[data-boxInfo=redis] > .data .info div:has(span) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.box[data-boxInfo=redis] > .data .info .runState {
+  color: #45BC83;
+  border-radius: 50px;
+  padding: 3px 5px;
+}
+.box[data-boxInfo=redis] > .data .info .runTime {
+  border-top: rgba(188, 188, 188, 0.7254901961) 1px solid;
+  padding-top: 10px;
+}
+.box[data-boxInfo=redis] > .data .info .runTime div {
+  margin-bottom: 5px;
+}
+.box[data-boxInfo=redis] > .data .info .runTime .redisTime {
+  text-align: right;
+}
+.box[data-boxInfo=redis] > .data .redisMemory {
+  padding: 0 20px;
+  border-left: rgba(188, 188, 188, 0.7254901961) 1px solid;
+  border-right: rgba(188, 188, 188, 0.7254901961) 1px solid;
+}
+.box[data-boxInfo=redis] > .data .redisMemory .memDataNum {
+  font-size: 20px;
+  font-weight: 700;
+}
+.box[data-boxInfo=redis] > .data .redisMemory .progressBar {
+  background: #E6E7EB;
+  height: 5px;
+  border-radius: 20px;
+  margin: 11px 0;
+}
+.box[data-boxInfo=redis] > .data .redisMemory .progressBar .progress {
+  background: #8E8691;
+  height: 5px;
+  border-radius: inherit;
+  width: 20%;
+}
+.box[data-boxInfo=redis] > .data .redisMemory .progressBar .memData {
+  font-size: 12px;
+}
+.box[data-boxInfo=redis] > .data .connected {
+  padding-left: 20px;
+}
+.box[data-boxInfo=redis] > .data .connected .connectedNum {
+  font-size: 20px;
+  font-weight: 700;
+}
+.box[data-boxInfo=redis] > .data .connected .connectedChart {
+  height: 20px;
+}
+.box[data-boxInfo=redis] .keyspace {
+  margin-top: 10px;
+}
+.box[data-boxInfo=redis] .keyspace .data {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.box[data-boxInfo=redis] .keyspace .data .row {
+  display: flex;
+  flex: 1;
+}
+.box[data-boxInfo=redis] .keyspace .data .header-row {
+  font-size: 13px;
+  color: #494d53;
+}
+.box[data-boxInfo=redis] .keyspace .data .cell {
+  flex: 1;
+  padding: 5px;
+  text-align: left;
+}
+
+.botInfo {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin: 8px 0;
+}
+.botInfo .avatar-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  margin-left: 20px;
+  margin-right: 30px;
+  position: relative;
+}
+.botInfo .avatar-box .avatar {
+  position: relative;
+  height: 100px;
+  width: 100px;
+  border-radius: 25%;
+}
+.botInfo .avatar-box .avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.botInfo .avatar-box .avatar::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow: -2px 2px 5px 1px rgba(8, 8, 8, 0.5);
+}
+.botInfo .avatar-box .avatar::after {
+  content: "";
+  position: absolute;
+  inset: -0.8em;
+  background: radial-gradient(circle at top center, rgba(255, 200, 135, 0.6) 0%, transparent 50%), radial-gradient(circle at top left, rgba(102, 190, 240, 0.6) 0%, transparent 50%), radial-gradient(circle at top right, rgba(255, 100, 100, 0.6) 0%, transparent 50%), radial-gradient(circle at bottom center, rgba(147, 112, 190, 0.6) 0%, transparent 80%);
+  border-radius: inherit;
+  filter: blur(0.4em);
+  opacity: 1;
+  z-index: -2;
+}
+.botInfo .avatar-box .onlineStatus {
+  position: absolute;
+  bottom: -6px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+.botInfo .avatar-box .onlineStatus img {
+  width: 100%;
+  height: 100%;
+}
+.botInfo .avatar-box .onlineStatus::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: 0px;
+  border-radius: 50%;
+  box-shadow: -2px 2px 5px 1px rgba(8, 8, 8, 0.5);
+}
+.botInfo .header {
+  font-size: 14px;
+  width: 75%;
+  color: #000;
+}
+.botInfo .header p {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+.botInfo .header p > span {
+  border-radius: 6px;
+  box-shadow: -2px 2px 3px rgba(8, 8, 8, 0.5);
+  padding: 0px 8px;
+  margin-right: 7px;
+  white-space: nowrap;
+}
+.botInfo .header p > span img {
+  width: 14px;
+  height: 14px;
+  vertical-align: -2px;
+}
+.botInfo .header p:nth-child(3) span:nth-child(1) {
+  background: rgba(215, 153, 222, 0.7019607843);
+}
+.botInfo .header p:nth-child(3) span:nth-child(2) {
+  background: rgba(203, 199, 200, 0.7019607843);
+}
+.botInfo .header p:nth-child(4) span:nth-child(1),
+.botInfo .header p:nth-child(4) span:nth-child(4) {
+  background: var(--purple);
+}
+.botInfo .header p:nth-child(4) span:nth-child(2),
+.botInfo .header p:nth-child(4) span:nth-child(5) {
+  background: var(--orange);
+}
+.botInfo .header p:nth-child(4) span:nth-child(3),
+.botInfo .header p:nth-child(4) span:nth-child(6) {
+  background: var(--blue);
+}
+.botInfo .header p .suffix {
+  font-size: 12px;
+  color: #171717;
+  background: none !important;
+}
+.botInfo .header table {
+  background: #67abdb;
+  border-radius: 5px;
+  box-shadow: #000 1px 1px 3px;
+  margin: auto;
+  margin-top: 5px;
+}
+.botInfo .header table td {
+  line-height: 14px;
+}
+.botInfo .header table td.dyeing {
+  padding-left: 5px;
+  text-align: center;
+}
+.botInfo .header table td.dyeing:not(:last-child) {
+  border-right: 2px solid #2f4f4f;
+  padding-right: 10px;
+}
+.botInfo .header table td:nth-child(odd):not(:first-child) {
+  padding-left: 10px;
+}
+.botInfo .header h1 {
+  display: flex;
+  align-items: center;
+  color: #000;
+  width: 100%;
+  border-bottom: #c0bfc1 1px dashed;
+  padding-bottom: 5px;
+}
+.botInfo .header h1 .name {
+  max-width: 75%;
+}
+
+.memory .title {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+  margin-bottom: 10px;
+}
+.memory .title .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 7px;
+}
+.memory li {
+  margin: 10px;
+  display: flex;
+  padding: 10px;
+  font-size: 14px;
+  color: #434242;
+}
+.memory .left {
+  /* 定义宽度 */
+  --w: 65px;
+  --back-shadow: #fff;
+  /* 父容器gap间距 */
+  --gap: 5px;
+  /* 第二层圆形宽度 */
+  --inner: calc(var(--w) - var(--gap));
+  /* 文本颜色 */
+  --text-color: #514f4f;
+  /* 定义stroke的宽度 */
+  --stroke: 6px;
+  /* svg环形宽度 更正内容*/
+  --circle: calc(var(--inner) - var(--stroke));
+  /* 第三层圆形宽度 */
+  --center: calc(var(--circle) - var(--stroke));
+  width: 12%;
+  display: flex;
+  align-items: center;
+  margin-right: 10px;
+}
+.memory .left .container-box::after {
+  font-size: 16px;
+  font-weight: normal;
+}
+.memory .right {
+  flex: 1;
+}
+.memory .right .fs {
+  display: flex;
+  justify-content: space-between;
+}
+.memory .right .fs .name {
+  color: #000;
+}
+.memory .right .progress {
+  background: #E6E7EB;
+  height: 5px;
+  border-radius: 20px;
+  margin: 11px 0;
+}
+.memory .right .progress .bar {
+  background: #8E8691;
+  height: 5px;
+  border-radius: inherit;
+  width: 20%;
+}
+.memory .right .fsInfo {
+  display: flex;
+  justify-content: space-between;
+}
+.memory .right .fsInfo > div {
+  display: flex;
+  align-items: center;
+}
+.memory .right .fsInfo > div .icon {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #45BC83;
+  margin-right: 5px;
+}
+.memory .speed {
+  padding: 10px;
+  margin: 10px;
+  height: auto;
+}
+.memory .speed p:first-child {
+  flex: 0 0 50%;
+  max-width: 50%;
+}
+.memory .speed p:last-child {
+  font-weight: 500;
+}
+.memory .speed p:last-child span {
+  color: #000;
+}
+
+.HardDisk_li .mount {
+  min-width: 15px;
+  max-width: 7em;
+  line-height: 25px;
+  text-align: left;
+}
+.HardDisk_li .percentage {
+  min-width: 2em;
+  line-height: 25px;
+  text-align: center;
+}
+
+.copyright.abs {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: -moz-max-content;
+  width: max-content;
+}
+
+.box[data-boxInfo=网络] .title {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+  margin-bottom: 10px;
+}
+.box[data-boxInfo=网络] .title .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 7px;
+}
+.box[data-boxInfo=网络] .networkInfo .chartBox {
+  padding: 5px 10px;
+  margin: 20px;
+  border-radius: 10px;
+}
+.box[data-boxInfo=网络] .networkInfo .data {
+  display: grid;
+  margin: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  white-space: nowrap;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div {
+  border-radius: 5px;
+  padding: 7px;
+  display: flex;
+  align-items: center;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div .icon {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div .icon img {
+  width: 100%;
+  height: 100%;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div .info {
+  font-size: 13px;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div .info .text {
+  color: #696d70;
+  margin-bottom: 3px;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div .info .networkData {
+  font-size: 15px;
+  font-weight: 700;
+}
+.box[data-boxInfo=网络] .networkInfo .data > div .info .networkData .unit {
+  color: #696d70;
+  font-weight: 500;
+  font-size: 12px;
+}
+.box[data-boxInfo=网络] .psTest .data {
+  display: flex;
+  flex-direction: column;
+  font-size: 17px;
+  margin: 0px 20px;
+  margin-bottom: 10px;
+  padding: 5px 10px;
+}
+.box[data-boxInfo=网络] .psTest .data .row {
+  display: flex;
+  flex: 1;
+}
+.box[data-boxInfo=网络] .psTest .data .header-row {
+  font-size: 18px;
+  color: #494d53;
+}
+.box[data-boxInfo=网络] .psTest .data .cell {
+  flex: 1;
+  padding: 5px;
+  text-align: center;
+}
+.box[data-boxInfo=网络] .psTest .data .cell:first-child {
+  flex: 3;
+  text-align: left;
+}
+
+.speed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  height: 25px;
+  padding: 0px 10px;
+  font-size: 16px;
+  line-height: 25px;
+}
+.speed p {
+  margin: 0;
+}
+.speed p:first-child {
+  flex: 0 0 32%;
+  max-width: 32%;
+}
+.speed p:last-child {
+  flex: 1 1 68%;
+  text-align: right;
+  font-weight: 700;
+  color: #333;
+}
+.speed p img {
+  vertical-align: middle;
+  height: 14px;
+  margin-right: 6px;
+}
+
+.fastFetch .title {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+  margin-bottom: 10px;
+}
+.fastFetch .title .icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 7px;
+}
+.fastFetch .speed {
+  height: 35px;
+  gap: 15px;
+  font-size: 15px;
+  padding: 0;
+}
+.fastFetch .speed p:first-child {
+  flex: 0 0 32%;
+  max-width: 32%;
+  text-overflow: clip;
+}
+.fastFetch .speed p:last-child {
+  flex: 1 1 68%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  font-weight: 500;
+}
+.fastFetch .icon {
+  font-family: "MapleMono";
+  margin-right: 10px;
+  font-size: 15px;
+}
+.fastFetch .content {
+  display: grid;
+  grid-template-columns: repeat(2, 50%);
+  -moz-column-gap: 10px;
+       column-gap: 10px;
+  row-gap: 5px;
+  margin: 5px 10px;
+  padding: 5px 15px;
+}
+
+.title,
+.header-row {
+  font-weight: 700;
+}
+
+.box[data-boxInfo=系统信息] {
+  display: flex;
+  gap: 10px;
+}
+.box[data-boxInfo=系统信息] > div {
+  flex: 1;
+  padding: 20px;
+}
+.box[data-boxInfo=系统信息] > div .sysTitle {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  padding-top: 5px;
+  border-bottom: 2px dashed rgba(112, 112, 112, 0.8549019608);
+  border-bottom: none;
+  color: #404040;
+  padding: 0;
+  font-size: 14px;
+}
+.box[data-boxInfo=系统信息] > div .sysTitle .icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 7px;
+}
+.box[data-boxInfo=系统信息] > div .sysData {
+  margin-top: 10px;
+}
+.box[data-boxInfo=系统信息] > div .sysData .main {
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+.box[data-boxInfo=系统信息] > div .sysData .secondary {
+  font-size: 12px;
+  color: #2e2e2e;
+}/*# sourceMappingURL=index.css.map */
