@@ -27,25 +27,6 @@
 
 AstrBot 官方镜像已包含这些依赖；其他环境如缺失可自行安装。
 
-## 配置
-
-插件配置通过 AstrBot WebUI 的插件配置页面修改，主要配置项：
-
-- `monitor.interval`：监控采样间隔，默认 60 秒
-- `monitor.history_size`：每个指标保留的数据点，默认 60
-- `systemResources`：显示 CPU、RAM、SWAP、GPU
-- `processLoad`：进程区开关、Top 数量、排序方式
-- `showFastFetch`：是否显示系统信息区
-- `psTestSites`：网络测试站点、超时、并发
-- `style.backdrop`：背景图 API；失败时使用内置背景
-- `style.backdropDefault`：`random` 或指定内置背景文件名
-- `style.startColumn`：是否启用多列布局；默认关闭，渲染为一张长图
-- `embed_font`：是否内嵌 FZB / NZBZ 字体
-- `render.viewport_width`：状态卡片视口宽度
-- `render.monitor_viewport_width`：监控页视口宽度
-- `bot.name` / `bot.avatar`：Bot 名称和头像覆盖
-- `hostname.override`：Docker 容器主机名覆盖
-
 ## 数据说明
 
 - 插件运行在 Docker 中时，资源数据是**容器内可见视角**；CPU/内存/磁盘可能与宿主机不同。

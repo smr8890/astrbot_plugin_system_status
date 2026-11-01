@@ -80,7 +80,7 @@ def _read_plugin_version(plugin_dir: Path) -> str:
             return version if version.startswith("v") else f"v{version}"
     except Exception:
         pass
-    return "v1.1.0"
+    return "v1.1.1"
 
 
 def _query_database(db_path: Path | None) -> dict[str, Any]:

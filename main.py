@@ -17,9 +17,9 @@ from .services.svg_chart import build_monitor_charts
 
 @register(
     "astrbot_plugin_system_status",
-    "smr",
+    "smr8890",
     "系统状态卡片，视觉复刻 yenai-plugin，使用 AstrBot T2I 渲染",
-    "1.1.0",
+    "1.1.1",
 )
 class SystemStatusPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -72,8 +72,6 @@ class SystemStatusPlugin(Star):
         history = await self.get_kv_data("monitor_history", {})
         self.sampler.load_history(history)
         await self.sampler.start()
-        if self._conf("style.backdropWarmup", True):
-            asyncio.create_task(self.renderer.warmup())
 
     async def terminate(self) -> None:
         await self.sampler.stop()

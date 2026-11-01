@@ -215,16 +215,6 @@
         "type": "int",
         "default": 8
       },
-      "backdropCacheTTL": {
-        "description": "背景缓存时间（秒）",
-        "type": "int",
-        "default": 300
-      },
-      "backdropWarmup": {
-        "description": "启动时预取背景",
-        "type": "bool",
-        "default": true
-      },
       "BotNameColor": {
         "description": "Bot 昵称颜色",
         "hint": "支持 gradient: 开头的渐变，例如 gradient:271.14deg,#001bff,#00f0ff。",

@@ -37,7 +37,6 @@ class StatusRenderer:
         self.font_maple = self._load_font(
             plugin_dir / "resources" / "common" / "font" / "MapleMono-NF-icons.woff2"
         )
-        self._backdrop_cache: tuple[float, str] | None = None
         self._avatar_cache: dict[str, tuple[float, str]] = {}
         self._default_avatar_uri = self._load_default_avatar()
 
@@ -263,11 +262,6 @@ class StatusRenderer:
         return uri
 
     async def get_backdrop(self) -> str:
-        ttl = float(self._cfg("style.backdropCacheTTL", 300) or 300)
-        now = asyncio.get_running_loop().time()
-        if self._backdrop_cache and now - self._backdrop_cache[0] < ttl:
-            return self._backdrop_cache[1]
-
         api = str(self._cfg("style.backdrop", "https://t.alcy.cc/mp") or "").strip()
         uri = ""
         if api:
@@ -286,7 +280,6 @@ class StatusRenderer:
 
         if not uri:
             uri = "linear-gradient(135deg, #e9e9e9 0%, #c5ccda 100%)"
-        self._backdrop_cache = (now, uri)
         return uri
 
     def _local_backdrop(self) -> str:
@@ -317,9 +310,3 @@ class StatusRenderer:
         except Exception:
             return ""
 
-    async def warmup(self) -> None:
-        # Trigger one background request in the background so the first command is faster.
-        try:
-            await self.get_backdrop()
-        except Exception:
-            pass
