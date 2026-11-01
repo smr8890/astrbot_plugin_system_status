@@ -55,6 +55,10 @@ AstrBot 官方镜像已包含这些依赖；其他环境如缺失可自行安装
 - GPU 仅在有 `nvidia-smi` 时显示，否则自动隐藏。
 - FastFetch 未安装时，会生成等价的 Python 系统信息，保持卡片结构完整。
 
+## 版本变更
+
+详见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 许可与致谢
 
 - 卡片视觉、CSS、图标、背景和字体（FZB、NZBZ、MapleMono 图标子集）来源：[yenai-plugin](https://github.com/yeyang52/yenai-plugin)，遵循 GPL-3.0。
