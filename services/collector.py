@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from functools import lru_cache
 import platform as platform_module
 import re
 import shutil
@@ -66,6 +67,20 @@ def _find_db_path() -> Path | None:
         reverse=True,
     )
     return candidates[0] if candidates else None
+
+
+def _read_plugin_version(plugin_dir: Path) -> str:
+    try:
+        text = (plugin_dir / "metadata.yaml").read_text(
+            encoding="utf-8", errors="ignore"
+        )
+        match = re.search(r"^version:\s*[\"']?([^\"'\s]+)", text, re.MULTILINE)
+        if match:
+            version = match.group(1).strip()
+            return version if version.startswith("v") else f"v{version}"
+    except Exception:
+        pass
+    return "v1.1.0"
 
 
 def _query_database(db_path: Path | None) -> dict[str, Any]:
@@ -176,6 +191,95 @@ def _read_os_release() -> str:
                     return value
     return platform_module.platform()
 
+
+def _os_display_name() -> str:
+    if os.name == "nt":
+        try:
+            release, version, _csd, _ptype = platform_module.win32_ver()
+            edition = ""
+            try:
+                edition = platform_module.win32_edition() or ""
+            except Exception:
+                pass
+            name = f"Windows {release or ''}".strip()
+            if edition and edition.lower() not in name.lower():
+                name += f" {edition}"
+            if version:
+                name += f" ({version})"
+            return name
+        except Exception:
+            return platform_module.platform()
+    return _read_os_release()
+
+
+def _kernel_display() -> str:
+    if os.name == "nt":
+        try:
+            release, version, _csd, _ptype = platform_module.win32_ver()
+        except Exception:
+            release, version = platform_module.release(), platform_module.version()
+        release = release or platform_module.release()
+        version = version or platform_module.version()
+        if release and version:
+            return f"Windows {release} ({version})"
+        return f"Windows {release or version}".strip()
+    system = platform_module.system()
+    release = platform_module.release()
+    return f"{system} {release}".strip()
+
+
+def _run_shell_version_command(executable: str, args: list[str]) -> str:
+    try:
+        process = subprocess.run(
+            [executable, *args],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+            errors="ignore",
+        )
+        return ((process.stdout or "") + "\n" + (process.stderr or "")).strip()
+    except Exception:
+        return ""
+
+
+@lru_cache(maxsize=8)
+def _shell_version(shell: str) -> str:
+    name = Path(shell).name.lower()
+    if name in {"powershell", "powershell.exe", "pwsh", "pwsh.exe"}:
+        output = _run_shell_version_command(
+            shell,
+            ["-NoProfile", "-NonInteractive", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+        )
+        match = re.search(r"(\d+(?:\.\d+)+)", output)
+        return match.group(1) if match else ""
+    if name in {"bash", "bash.exe"}:
+        output = _run_shell_version_command(shell, ["--version"])
+        match = re.search(r"version\s+(\d+(?:\.\d+)+)", output)
+        return match.group(1) if match else ""
+    if name in {"zsh", "zsh.exe"}:
+        output = _run_shell_version_command(shell, ["--version"])
+        match = re.search(r"zsh\s+(\d+(?:\.\d+)+)", output)
+        return match.group(1) if match else ""
+    if name in {"fish", "fish.exe"}:
+        output = _run_shell_version_command(shell, ["--version"])
+        match = re.search(r"version\s+(\d+(?:\.\d+)+)", output)
+        return match.group(1) if match else ""
+    return ""
+
+
+def _terminal_display() -> str:
+    shell = os.environ.get("SHELL", "").strip()
+    if not shell:
+        return ""
+    name = Path(shell).name
+    lower = name.lower()
+    if lower in {"powershell", "powershell.exe", "pwsh", "pwsh.exe"}:
+        display_name = "PowerShell"
+    else:
+        display_name = name[:-4] if lower.endswith(".exe") else name
+    version = _shell_version(shell)
+    return f"{display_name} {version}".strip() if version else display_name
 
 def _cpu_brand() -> str:
     try:
@@ -384,6 +488,32 @@ def _dmi_value(name: str) -> str:
         return ""
 
 
+def _display_resolution() -> str:
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            user32 = ctypes.windll.user32
+            width = int(user32.GetSystemMetrics(0))
+            height = int(user32.GetSystemMetrics(1))
+            if width and height:
+                return f"{width}x{height}"
+        except Exception:
+            pass
+    try:
+        for path in sorted(Path("/sys/class/drm").glob("card*-*/modes")):
+            try:
+                for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+                    line = line.strip()
+                    if line:
+                        return line
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return ""
+
+
 def _package_count() -> str:
     try:
         process = subprocess.run(
@@ -437,28 +567,47 @@ def _fastfetch_sync(config: Any, snapshot: dict[str, Any]) -> list[dict[str, Any
         except Exception:
             pass
 
-    # Match yenai-plugin's fastfetch module list, icons and colors.
+    # Match yenai-plugin's fastfetch/neowofetch system information layout.
     icons = {
         "OS": ("\uf17c", "#6670F6"),
         "内核": ("\uf013", "#6640F6"),
+        "运行时间": ("\ue641", "#45BC83"),
         "CPU": ("\uf4bc", "#95959B"),
-        "GPU": ("\U000f0fb2", "#AFCD9C"),
         "内存": ("\U000f046d", "#788760"),
-        "主板": ("\ueabe", "#7C92CE"),
-        "BIOS": ("\uef70", "#776FA4"),
         "包": ("\U000f03d6", "#F4A460"),
         "主机": ("\U000f0322", "#82df0e"),
         "终端": ("\uf489", "#20B2AA"),
         "分辨率": ("\U000f0379", "#FF69B4"),
     }
     items: list[tuple[str, str]] = []
-    os_name = _read_os_release()
+
+    os_name = _os_display_name()
     if os_name:
         items.append(("OS", os_name))
 
-    kernel = platform_module.release()
+    host = _dmi_value("product_name") or socket.gethostname()
+    if host:
+        items.append(("主机", host))
+
+    kernel = _kernel_display()
     if kernel:
-        items.append(("内核", f"Linux {kernel}"))
+        items.append(("内核", kernel))
+
+    items.append(
+        ("运行时间", _format_uptime_short(max(0.0, time.time() - psutil.boot_time())))
+    )
+
+    packages = _package_count()
+    if packages:
+        items.append(("包", packages))
+
+    terminal = _terminal_display()
+    if terminal:
+        items.append(("终端", terminal))
+
+    resolution = _display_resolution()
+    if resolution:
+        items.append(("分辨率", resolution))
 
     brand = _cpu_brand()
     cores = psutil.cpu_count(logical=True) or 0
@@ -469,39 +618,14 @@ def _fastfetch_sync(config: Any, snapshot: dict[str, Any]) -> list[dict[str, Any
     if brand:
         items.append(("CPU", cpu_value))
 
-    gpu = _gpu_info()
-    if gpu:
-        items.append(("GPU", str(gpu.get("detailed") or "GPU")))
-
     memory = psutil.virtual_memory()
-    items.append(("内存", _human_memory(memory.total)))
-
-    board = _dmi_value("board_name")
-    if board:
-        items.append(("主板", board))
-
-    bios_version = _dmi_value("bios_version")
-    bios_date = _dmi_value("bios_date")
-    if bios_version:
-        bios_value = bios_version
-        if bios_date:
-            bios_value += f" ({bios_date})"
-        items.append(("BIOS", bios_value))
-
-    packages = _package_count()
-    if packages:
-        items.append(("包", packages))
-
-    host = _dmi_value("product_name") or socket.gethostname()
-    if host:
-        items.append(("主机", host))
-
-    shell = os.environ.get("SHELL", "").strip()
-    items.append(("终端", Path(shell).name if shell else "sh"))
-
-    display = os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")
-    if display:
-        items.append(("分辨率", display))
+    items.append(
+        (
+            "内存",
+            f"{_human_memory(memory.used)} / {_human_memory(memory.total)} "
+            f"({memory.percent:.0f}%)",
+        )
+    )
 
     return [
         {
@@ -511,7 +635,6 @@ def _fastfetch_sync(config: Any, snapshot: dict[str, Any]) -> list[dict[str, Any
         }
         for key, value in items
     ]
-
 
 def _format_uptime_short(seconds: float) -> str:
     from .utils import format_duration
@@ -536,6 +659,7 @@ class SystemCollector:
         self.sampler = sampler
         self.logger = logger
         self.db_path = _find_db_path()
+        self.plugin_version = _read_plugin_version(plugin_dir)
         now = time.time()
         self._identity_cache: dict[str, tuple[float, float, dict[str, Any]]] = {
             str(platform_id): (now, 300.0, dict(value))
@@ -833,7 +957,7 @@ class SystemCollector:
         return {
             "osInfo": {
                 "main": platform_module.system(),
-                "secondary": _read_os_release(),
+                "secondary": _os_display_name(),
             },
             "hostname": {"main": hostname_override or socket.gethostname()},
             "sysTime": {
@@ -1150,6 +1274,7 @@ class SystemCollector:
         return (
             f"Created By AstrBot <span class=\"version\">v{ASTRBOT_VERSION}</span> "
             f"&amp; astrbot_plugin_system_status"
+            f"<span class=\"version\">{self.plugin_version}</span>"
             f"<br>Rendered via AstrBot T2I &amp; psutil "
             f"<span class=\"version\">{psutil.__version__}</span>"
         )

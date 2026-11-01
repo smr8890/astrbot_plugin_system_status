@@ -19,7 +19,7 @@ from .services.svg_chart import build_monitor_charts
     "astrbot_plugin_system_status",
     "smr",
     "系统状态卡片，视觉复刻 yenai-plugin，使用 AstrBot T2I 渲染",
-    "1.0.0",
+    "1.1.0",
 )
 class SystemStatusPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):

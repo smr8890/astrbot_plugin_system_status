@@ -21,31 +21,19 @@
       "type": "kernel"
     },
     {
+      "key": "(#45BC83)运行时间",
+      "keyColor": "#45BC83",
+      "type": "uptime"
+    },
+    {
       "key": "(#95959B)CPU",
       "keyColor": "#95959B",
       "type": "cpu"
     },
     {
-      "key": "(#AFCD9C)GPU {}",
-      "keyColor": "#AFCD9C",
-      "type": "gpu",
-      "format": "{name}"
-    },
-    {
       "key": "(#788760)内存 {}",
       "keyColor": "#788760",
       "type": "physicalmemory"
-    },
-    {
-      "key": "(#7C92CE)主板",
-      "keyColor": "#7C92CE",
-      "type": "board",
-      "format": "{name}"
-    },
-    {
-      "key": "(#776FA4)BIOS",
-      "keyColor": "#776FA4",
-      "type": "bios"
     },
     {
       "key": "(#F4A460)包",

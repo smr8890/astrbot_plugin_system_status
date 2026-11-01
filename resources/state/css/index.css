@@ -813,17 +813,18 @@ li {
 }
 .fastFetch .speed {
   height: 35px;
-  gap: 15px;
+  gap: 4px;
   font-size: 15px;
+  line-height: 35px;
   padding: 0;
 }
 .fastFetch .speed p:first-child {
-  flex: 0 0 32%;
-  max-width: 32%;
+  flex: 0 0 28%;
+  max-width: 28%;
   text-overflow: clip;
 }
 .fastFetch .speed p:last-child {
-  flex: 1 1 68%;
+  flex: 1 1 72%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
