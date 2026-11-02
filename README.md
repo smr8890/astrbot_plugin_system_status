@@ -4,7 +4,7 @@
 
 ## 预览
 
-<img src="resources/img/preview.jpg" alt="系统状态卡片预览" width="520">
+<img src="https://raw.githubusercontent.com/smr8890/astrbot_plugin_system_status/master/resources/img/preview.jpg" alt="系统状态卡片预览" width="520">
 
 ## 功能
 
