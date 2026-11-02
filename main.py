@@ -18,7 +18,7 @@ from .services.svg_chart import build_monitor_charts
 @register(
     "astrbot_plugin_system_status",
     "smr8890",
-    "系统状态卡片，视觉复刻 yenai-plugin，使用 AstrBot T2I 渲染",
+    "生成系统状态卡片和资源监控图表，展示 Bot 运行状态、硬件资源、网络与磁盘使用情况。",
     "1.1.1",
 )
 class SystemStatusPlugin(Star):

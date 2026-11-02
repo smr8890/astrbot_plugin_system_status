@@ -1,6 +1,10 @@
 # astrbot_plugin_system_status
 
-移植自 [yenai-plugin](https://github.com/yeyang52/yenai-plugin) 的系统状态卡片，使用 AstrBot T2I 服务渲染。
+一个用于 AstrBot 的系统状态展示插件，移植自[Yenai-Plugin](https://github.com/yeyang52/yenai-plugin)，可生成系统状态卡片和资源监控图表，直观展示 Bot 运行状态、硬件资源、网络与磁盘使用情况。
+
+## 预览
+
+<img src="resources/img/preview.jpg" alt="系统状态卡片预览" width="520">
 
 ## 功能
 
@@ -16,16 +20,35 @@
 
 ## 安装
 
-将插件目录放入 AstrBot 的 `data/plugins/`，重启 AstrBot 或重载插件。
+> 需要 AstrBot >= 4.x，并确保 T2I 渲染服务可用。
+>
 
-依赖：
+1. 克隆本仓库到 AstrBot 的插件目录：
 
-- AstrBot >= 4.x（使用 `Star.html_render` / T2I）
-- `psutil`
-- `aiohttp`
-- `Pillow`
+   ```bash
+   cd AstrBot/data/plugins
+   git clone https://github.com/smr8890/astrbot_plugin_system_status.git
+   ```
 
-AstrBot 官方镜像已包含这些依赖；其他环境如缺失可自行安装。
+2. 重启 AstrBot 或重载插件
+
+## 使用方法
+
+### 系统状态卡片
+
+发送以下指令获取系统状态卡片：
+
+```text
+/状态
+```
+
+### 资源监控图表
+
+发送以下指令获取资源监控图表：
+
+```text
+/状态监控
+```
 
 ## 数据说明
 
@@ -36,12 +59,8 @@ AstrBot 官方镜像已包含这些依赖；其他环境如缺失可自行安装
 - GPU 仅在有 `nvidia-smi` 时显示，否则自动隐藏。
 - FastFetch 未安装时，会生成等价的 Python 系统信息，保持卡片结构完整。
 
-## 版本变更
-
-详见 [CHANGELOG.md](CHANGELOG.md)。
-
 ## 许可与致谢
 
-- 卡片视觉、CSS、图标、背景和字体（FZB、NZBZ、MapleMono 图标子集）来源：[yenai-plugin](https://github.com/yeyang52/yenai-plugin)，遵循 GPL-3.0。
+- 卡片视觉、CSS、图标、背景和字体（FZB、NZBZ、MapleMono 图标子集）来源：[Yenai-Plugin](https://github.com/yeyang52/yenai-plugin)，遵循 GPL-3.0
 - 本项目自身遵循仓库中的 AGPL-3.0 许可。
 - 如果公开分发，请保留上述来源说明，并注意 FZB/NZBZ 字体及背景图片的授权。

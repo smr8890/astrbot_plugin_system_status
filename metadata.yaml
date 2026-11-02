@@ -1,6 +1,6 @@
 name: astrbot_plugin_system_status
 display_name: 系统状态卡片
-desc: 移植自 yenai-plugin 的系统状态卡片，使用 AstrBot T2I 渲染，包含监控图表。
+desc: 生成系统状态卡片和资源监控图表，展示 Bot 运行状态、硬件资源、网络与磁盘使用情况。
 version: v1.1.1
 author: smr8890
 repo: https://github.com/smr8890/astrbot_plugin_system_status
