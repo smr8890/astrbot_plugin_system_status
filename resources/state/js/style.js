@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 
 const {
-  BotNameColor, progressBarColor, redisInfoValColor, startColumn, botInfoColor
+  BotNameColor, progressBarColor, botInfoColor
 } = Config.style
 // 修改BotNameColor
 const botNameElements = document.querySelectorAll(".header h1")
@@ -35,37 +35,8 @@ if (mainHardwareElement.length === 5) {
   containerElementWidth += 50
 }
 
-// 多列布局
-let columnCount = 1
-const containerElementHeight = containerElement.offsetHeight
-if (containerElementHeight > 4500) {
-  columnCount = 4
-} else if (containerElementHeight > 2900) {
-  columnCount = 3
-} else if (containerElementHeight > 1700) {
-  columnCount = 2
-}
-
-if (columnCount >= 2 && startColumn) {
-  containerElement.style.columnCount = columnCount
-  containerElementWidth *= columnCount
-  // 版权居中
-  containerElement.style.paddingBottom = "70px"
-  document.addEventListener("DOMContentLoaded", function() {
-    const copyrightElement = document.querySelector(".copyright")
-    copyrightElement.classList.add("abs")
-  })
-  document.querySelector(".box").style.marginTop = "0"
-}
 containerElement.style.width = containerElementWidth + "px"
 
-// 自定义redis颜色
-document.addEventListener("DOMContentLoaded", function() {
-  const redisValElement = document.querySelectorAll(".redisBox .number")
-  redisValElement.forEach(element => {
-    element.style.color = redisInfoValColor ?? "#485ab6"
-  })
-})
 // 硬盘统一宽度
 const hardDiskLieElements = document.querySelectorAll(".HardDisk_li .mount")
 let maxWidth = -Infinity

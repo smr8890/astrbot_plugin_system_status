@@ -678,15 +678,6 @@ li {
   text-align: center;
 }
 
-.copyright.abs {
-  position: absolute;
-  left: 50%;
-  bottom: 10px;
-  transform: translateX(-50%);
-  width: -moz-max-content;
-  width: max-content;
-}
-
 .box[data-boxInfo=网络] .title {
   display: flex;
   align-items: center;

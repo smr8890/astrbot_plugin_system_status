@@ -97,14 +97,19 @@ class SystemStatusPlugin(Star):
                     data, umo=getattr(event, "unified_msg_origin", None)
                 )
             yield event.chain_result([Image.fromFileSystem(path)])
-        except Exception as exc:
-            logger.exception("渲染系统状态卡片失败: %s", exc)
+        except Exception:
+            logger.error("系统状态卡片渲染失败，请检查 AstrBot T2I 服务是否正常。")
+            logger.debug("系统状态卡片渲染异常详情", exc_info=True)
             if data:
                 yield event.plain_result(self._fallback_text(data)).use_t2i(False)
             else:
                 yield event.plain_result(
                     "系统状态卡片渲染失败，请检查 AstrBot T2I 服务是否正常。"
                 ).use_t2i(False)
+        finally:
+            # The command owns this event. Stop propagation so an interrupted
+            # handler or a failed reply send cannot fall through to the LLM.
+            event.stop_event()
 
     @filter.command("状态监控")
     async def monitor(self, event: AstrMessageEvent):
@@ -135,11 +140,16 @@ class SystemStatusPlugin(Star):
                     data, umo=getattr(event, "unified_msg_origin", None)
                 )
             yield event.chain_result([Image.fromFileSystem(path)])
-        except Exception as exc:
-            logger.exception("渲染系统状态监控失败: %s", exc)
+        except Exception:
+            logger.error("系统状态监控渲染失败，请检查 AstrBot T2I 服务是否正常。")
+            logger.debug("系统状态监控渲染异常详情", exc_info=True)
             yield event.plain_result(
                 "系统状态监控渲染失败，请检查 AstrBot T2I 服务是否正常。"
             ).use_t2i(False)
+        finally:
+            # The command owns this event. Stop propagation so an interrupted
+            # handler or a failed reply send cannot fall through to the LLM.
+            event.stop_event()
 
     @staticmethod
     def _fallback_text(data: dict[str, Any]) -> str:

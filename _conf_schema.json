@@ -200,7 +200,7 @@
     "items": {
       "backdrop": {
         "description": "背景图片 API",
-        "hint": "留空则只使用本地背景。默认使用 yenai 的随机背景 API。",
+        "hint": "留空则只使用本地背景。",
         "type": "string",
         "default": "https://t.alcy.cc/mp"
       },
@@ -220,18 +220,6 @@
         "hint": "支持 gradient: 开头的渐变，例如 gradient:271.14deg,#001bff,#00f0ff。",
         "type": "string",
         "default": "#000"
-      },
-      "startColumn": {
-        "description": "启用多列布局",
-        "hint": "关闭时渲染为一张长图；开启后按 1700/2900/4500px 高度自动分栏。",
-        "type": "bool",
-        "default": false
-      },
-      "redisInfoValColor": {
-        "description": "Redis 信息值颜色",
-        "hint": "兼容 yenai 配置项，当前版本不显示 Redis。",
-        "type": "string",
-        "default": "#485ab6"
       },
       "progressBarColor": {
         "description": "进度条颜色",
@@ -322,7 +310,7 @@
   },
   "embed_font": {
     "description": "内嵌 FZB / NZBZ 字体",
-    "hint": "开启后最接近 yenai 原版，但每次渲染请求体会增加约 2MB。",
+    "hint": "开启效果更佳，但每次渲染请求体会增加约 2MB。",
     "type": "bool",
     "default": true
   },
@@ -338,7 +326,7 @@
       },
       "viewport_width": {
         "description": "状态卡片视口宽度",
-        "hint": "yenai 卡片在 1.4 倍缩放下约 1050px 宽，1000 可避免单列时出现右侧留白。",
+        "hint": "卡片在 1.4 倍缩放下约 1050px 宽，1000 可避免单列时出现右侧留白。",
         "type": "int",
         "default": 1000
       },

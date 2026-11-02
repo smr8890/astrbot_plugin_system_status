@@ -129,10 +129,6 @@ class StatusRenderer:
                         "low", ["#84A0DF", "#2EC272", "#8070F9"]
                     ),
                 },
-                "redisInfoValColor": str(
-                    style.get("redisInfoValColor", "#485ab6")
-                ),
-                "startColumn": bool(style.get("startColumn", False)),
                 "botInfoColor": {
                     "botVersion": str(
                         (style.get("botInfoColor") or {}).get(
@@ -226,7 +222,7 @@ class StatusRenderer:
         )
         path_obj = Path(path)
         if not path_obj.exists() or path_obj.stat().st_size <= 4096:
-            raise RuntimeError("t2i 返回的图片无效")
+            raise RuntimeError("T2I 服务返回的图片无效")
         return str(path_obj)
 
     async def resolve_avatar(self, value: Any) -> str:

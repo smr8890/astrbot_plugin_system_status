@@ -1255,10 +1255,6 @@ class SystemCollector:
                 "medium": str(cfg(self.config, "style.progressBarColor.medium", "#ffa500")),
                 "low": low,
             },
-            "redisInfoValColor": str(
-                cfg(self.config, "style.redisInfoValColor", "#485ab6")
-            ),
-            "startColumn": bool(cfg(self.config, "style.startColumn", False)),
             "botInfoColor": {
                 "botVersion": str(
                     cfg(self.config, "style.botInfoColor.botVersion", "#FBE0F3")
