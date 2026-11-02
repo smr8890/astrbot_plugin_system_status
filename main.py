@@ -19,7 +19,7 @@ from .services.svg_chart import build_monitor_charts
     "astrbot_plugin_system_status",
     "smr8890",
     "生成系统状态卡片和资源监控图表，展示 Bot 运行状态、硬件资源、网络与磁盘使用情况。",
-    "1.1.1",
+    "1.2.0",
 )
 class SystemStatusPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
