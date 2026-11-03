@@ -69,7 +69,7 @@ def _read_plugin_version(plugin_dir: Path) -> str:
             return version if version.startswith("v") else f"v{version}"
     except Exception:
         pass
-    return "v1.4.0"
+    return "v1.5.0"
 
 
 async def _query_database(db: Any) -> dict[str, Any]:
@@ -540,6 +540,11 @@ def _fastfetch_sync(config: Any, snapshot: dict[str, Any]) -> list[dict[str, Any
     if show is False:
         return None
 
+    os_icon = {
+        "windows": ("\uf17a", "#0078D4"),
+        "darwin": ("\uf179", "#555555"),
+    }.get(platform_module.system().lower(), ("\uf17c", "#6670F6"))
+
     fastfetch = shutil.which("fastfetch")
     if fastfetch:
         config_path = Path(__file__).resolve().parent.parent / "resources" / "state" / "fastfetch" / "config.jsonc"
@@ -567,13 +572,16 @@ def _fastfetch_sync(config: Any, snapshot: dict[str, Any]) -> list[dict[str, Any
                     }
                 )
             if parsed:
+                for item in parsed:
+                    if item.get("key") == "OS":
+                        item["icon"] = {"color": os_icon[1], "icon": os_icon[0]}
                 return parsed
         except Exception:
             pass
 
     # Match yenai-plugin's fastfetch/neowofetch system information layout.
     icons = {
-        "OS": ("\uf17c", "#6670F6"),
+        "OS": os_icon,
         "内核": ("\uf013", "#6640F6"),
         "运行时间": ("\ue641", "#45BC83"),
         "CPU": ("\uf4bc", "#95959B"),
