@@ -7,7 +7,6 @@ import platform as platform_module
 import re
 import shutil
 import socket
-import sqlite3
 import subprocess
 import time
 from pathlib import Path
@@ -59,16 +58,6 @@ def cfg(config: Any, path: str, default: Any = None) -> Any:
     return default if current is None else current
 
 
-def _find_db_path() -> Path | None:
-    data_dir = Path(get_astrbot_data_path())
-    candidates = sorted(
-        data_dir.glob("data_v*.db"),
-        key=lambda path: path.stat().st_mtime,
-        reverse=True,
-    )
-    return candidates[0] if candidates else None
-
-
 def _read_plugin_version(plugin_dir: Path) -> str:
     try:
         text = (plugin_dir / "metadata.yaml").read_text(
@@ -83,7 +72,15 @@ def _read_plugin_version(plugin_dir: Path) -> str:
     return "v1.3.0"
 
 
-def _query_database(db_path: Path | None) -> dict[str, Any]:
+async def _query_database(db: Any) -> dict[str, Any]:
+    """Collect message and conversation statistics through the AstrBot DB API.
+
+    Args:
+        db: AstrBot database instance returned by ``context.get_db()``.
+
+    Returns:
+        Aggregated message and conversation counts keyed by platform ID.
+    """
     result: dict[str, Any] = {
         "messages": {},
         "total_messages": 0,
@@ -91,77 +88,84 @@ def _query_database(db_path: Path | None) -> dict[str, Any]:
         "total_conversations": 0,
         "sessions": {},
     }
-    if db_path is None or not db_path.exists():
+    if db is None:
         return result
 
     try:
-        connection = sqlite3.connect(
-            f"file:{db_path}?mode=ro",
-            uri=True,
-            timeout=3,
-        )
+        from sqlalchemy import case
+        from sqlmodel import func, select
+
+        from astrbot.core.db.po import ConversationV2, PlatformSession, PlatformStat
     except Exception:
         return result
 
     try:
-        cursor = connection.cursor()
-        try:
-            rows = cursor.execute(
-                "SELECT platform_id, COALESCE(SUM(count), 0) "
-                "FROM platform_stats GROUP BY platform_id"
-            ).fetchall()
-            for platform_id, count in rows:
+        async with db.get_db() as session:
+            rows = await session.execute(
+                select(
+                    PlatformStat.platform_id,
+                    func.coalesce(func.sum(PlatformStat.count), 0),
+                ).group_by(PlatformStat.platform_id)
+            )
+            for platform_id, count in rows.all():
                 result["messages"][str(platform_id)] = int(count or 0)
             result["total_messages"] = sum(result["messages"].values())
-        except Exception:
-            pass
 
-        try:
-            rows = cursor.execute(
-                "SELECT platform_id, user_id FROM conversations"
-            ).fetchall()
+            rows = await session.execute(
+                select(
+                    ConversationV2.platform_id,
+                    func.count(ConversationV2.inner_conversation_id),
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (ConversationV2.user_id.like("%:GroupMessage:%"), 1),
+                                else_=0,
+                            )
+                        ),
+                        0,
+                    ),
+                ).group_by(ConversationV2.platform_id)
+            )
             conversations: dict[str, dict[str, int]] = {}
-            for platform_id, user_id in rows:
+            for platform_id, total, group_count in rows.all():
                 key = str(platform_id or "")
-                bucket = conversations.setdefault(
-                    key, {"total": 0, "group": 0, "private": 0}
-                )
-                bucket["total"] += 1
-                if "GroupMessage" in str(user_id or ""):
-                    bucket["group"] += 1
-                else:
-                    bucket["private"] += 1
+                total = int(total or 0)
+                group = int(group_count or 0)
+                conversations[key] = {
+                    "total": total,
+                    "group": group,
+                    "private": total - group,
+                }
             result["conversations"] = conversations
             result["total_conversations"] = sum(
                 item["total"] for item in conversations.values()
             )
-        except Exception:
-            pass
 
-        try:
-            rows = cursor.execute(
-                "SELECT platform_id, is_group, COUNT(*) "
-                "FROM platform_sessions GROUP BY platform_id, is_group"
-            ).fetchall()
+            rows = await session.execute(
+                select(
+                    PlatformSession.platform_id,
+                    func.count(PlatformSession.inner_id),
+                    func.coalesce(
+                        func.sum(
+                            case((PlatformSession.is_group == 1, 1), else_=0)
+                        ),
+                        0,
+                    ),
+                ).group_by(PlatformSession.platform_id)
+            )
             sessions: dict[str, dict[str, int]] = {}
-            for platform_id, is_group, count in rows:
+            for platform_id, total, group_count in rows.all():
                 key = str(platform_id or "")
-                bucket = sessions.setdefault(
-                    key, {"total": 0, "group": 0, "private": 0}
-                )
-                bucket["total"] += int(count or 0)
-                if int(is_group or 0):
-                    bucket["group"] += int(count or 0)
-                else:
-                    bucket["private"] += int(count or 0)
+                total = int(total or 0)
+                group = int(group_count or 0)
+                sessions[key] = {
+                    "total": total,
+                    "group": group,
+                    "private": total - group,
+                }
             result["sessions"] = sessions
-        except Exception:
-            pass
-    finally:
-        try:
-            connection.close()
-        except Exception:
-            pass
+    except Exception:
+        pass
     return result
 
 
@@ -658,7 +662,6 @@ class SystemCollector:
         self.plugin_dir = plugin_dir
         self.sampler = sampler
         self.logger = logger
-        self.db_path = _find_db_path()
         self.plugin_version = _read_plugin_version(plugin_dir)
         now = time.time()
         self._identity_cache: dict[str, tuple[float, float, dict[str, Any]]] = {
@@ -682,9 +685,13 @@ class SystemCollector:
         }
 
     async def collect(self, event: Any) -> dict[str, Any]:
+        try:
+            db = self.context.get_db()
+        except Exception:
+            db = None
         snapshot, db_stats = await asyncio.gather(
             self.sampler.get_snapshot(max_age=120),
-            asyncio.to_thread(_query_database, self.db_path),
+            _query_database(db),
         )
 
         platforms = await self._collect_platforms(event, db_stats)
