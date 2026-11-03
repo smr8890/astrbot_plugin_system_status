@@ -1137,12 +1137,15 @@ class SystemCollector:
             )
 
         disks_io = []
-        for io in snapshot.get("disk_io") or []:
-            read_parts = bytes_parts(io.get("rIO_sec"))
-            write_parts = bytes_parts(io.get("wIO_sec"))
+        io_list = snapshot.get("disk_io") or []
+        if io_list:
+            read_sec = sum(float(io.get("rIO_sec") or 0.0) for io in io_list)
+            write_sec = sum(float(io.get("wIO_sec") or 0.0) for io in io_list)
+            read_parts = bytes_parts(read_sec)
+            write_parts = bytes_parts(write_sec)
             disks_io.append(
                 {
-                    "name": f"Disk IO · {io.get('name')}",
+                    "name": "Disk IO",
                     "rIO_sec": f"<span>{read_parts['size']} {read_parts['suffix']}</span>",
                     "wIO_sec": f"<span>{write_parts['size']} {write_parts['suffix']}</span>",
                     "tIO_sec": False,
