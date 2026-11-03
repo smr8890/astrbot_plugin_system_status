@@ -9,6 +9,7 @@ from xml.sax.saxutils import escape
 from .utils import human_bytes, human_speed
 
 DEFAULT_COLORS = ("#2ec7c9", "#b6a2de", "#84A0DF", "#2EC272", "#F2A65A")
+CHART_WINDOW_MS = 60 * 60 * 1000
 
 
 def _as_points(raw: Any) -> list[tuple[float, float]]:
@@ -80,6 +81,23 @@ def render_line_chart(
     if not prepared or len(all_points) < 2:
         return '<div class="chart-empty">暂无足够监控数据</div>'
 
+    # Keep only the latest hour of samples. When less data is available,
+    # the axis naturally stretches across the retained time span.
+    latest_timestamp = max(point[0] for point in all_points)
+    cutoff_timestamp = latest_timestamp - CHART_WINDOW_MS
+    filtered: list[dict[str, Any]] = []
+    filtered_points: list[tuple[float, float]] = []
+    for item in prepared:
+        points = [point for point in item["points"] if point[0] >= cutoff_timestamp]
+        if not points:
+            continue
+        filtered.append({**item, "points": points})
+        filtered_points.extend(points)
+    if not filtered or len(filtered_points) < 2:
+        return '<div class="chart-empty">暂无足够监控数据</div>'
+    prepared = filtered
+    all_points = filtered_points
+
     x_min = min(point[0] for point in all_points)
     x_max = max(point[0] for point in all_points)
     if x_max <= x_min:
@@ -91,7 +109,14 @@ def render_line_chart(
     else:
         y_max = max(1.0, y_max * 1.12)
 
-    margin_left = 58 if not compact else 52
+    grid_count = 4
+    axis_values = [y_max * step / grid_count for step in range(grid_count + 1)]
+    axis_labels = [_format_axis(value, unit) for value in axis_values]
+    widest_axis_label = max(len(label) for label in axis_labels)
+    margin_left = max(
+        58 if not compact else 52,
+        int(widest_axis_label * 6.4) + 14,
+    )
     margin_right = 18
     margin_top = 55 if not compact else 46
     margin_bottom = 30
@@ -143,19 +168,16 @@ def render_line_chart(
         )
 
     # Horizontal grid and y-axis labels.
-    grid_count = 4
-    for step in range(grid_count + 1):
-        ratio = step / grid_count
-        value = y_max * ratio
+    for value, label in zip(axis_values, axis_labels):
         y = y_coord(value)
         parts.append(
             f'<line x1="{margin_left}" y1="{y:.2f}" x2="{width - margin_right}" y2="{y:.2f}" '
             f'stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>'
         )
-        label = escape(_format_axis(value, unit))
         parts.append(
             f'<text x="{margin_left - 8}" y="{y + 4:.2f}" text-anchor="end" font-size="11" '
-            f'fill="#666666" font-family="FZB, Noto Sans CJK SC, sans-serif">{label}</text>'
+            f'fill="#666666" font-family="FZB, Noto Sans CJK SC, sans-serif">'
+            f"{escape(label)}</text>"
         )
 
     # X-axis labels.
