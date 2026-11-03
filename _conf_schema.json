@@ -217,7 +217,7 @@
       },
       "BotNameColor": {
         "description": "Bot 昵称颜色",
-        "hint": "支持 gradient: 开头的渐变，例如 gradient:271.14deg,#001bff,#00f0ff。",
+        "hint": "支持 gradient: 开头的渐变，例如 gradient:271.14deg,#001bff 0.98%,#00f0ff 25.79%,#fce84a 47.33%,#f34628 65.77%,#b275ff 91.4%。",
         "type": "string",
         "default": "#000"
       },

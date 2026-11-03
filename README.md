@@ -23,6 +23,12 @@
 > 需要 AstrBot >= 4.x，并确保 T2I 渲染服务可用。
 >
 
+### 方式一：通过 AstrBot 插件市场安装（推荐）
+
+在 AstrBot 管理面板中搜索 `astrbot_plugin_system_status` 并安装。
+
+### 方式二：手动安装
+
 1. 克隆本仓库到 AstrBot 的插件目录：
 
    ```bash
@@ -61,6 +67,5 @@
 
 ## 许可与致谢
 
-- 卡片视觉、CSS、图标、背景和字体（FZB、NZBZ、MapleMono 图标子集）来源：[Yenai-Plugin](https://github.com/yeyang52/yenai-plugin)，遵循 GPL-3.0
+- 卡片视觉、CSS、图标、背景和字体来源：[Yenai-Plugin](https://github.com/yeyang52/yenai-plugin)，遵循 GPL-3.0。
 - 本项目自身遵循仓库中的 AGPL-3.0 许可。
-- 如果公开分发，请保留上述来源说明，并注意 FZB/NZBZ 字体及背景图片的授权。
