@@ -11,12 +11,15 @@ import psutil
 
 HISTORY_KEYS = (
     "cpu",
-    "ram",
+    "ram_active",
     "net_up",
     "net_down",
     "disk_read",
     "disk_write",
 )
+
+# Match yenai-plugin's 12-hour Redis history TTL.
+HISTORY_TTL_SECONDS = 12 * 60 * 60
 
 
 class ResourceSampler:
@@ -226,21 +229,25 @@ class ResourceSampler:
         ts = round(float(snapshot.get("ts", time.time())) * 1000, 1)
         values = {
             "cpu": snapshot.get("cpu", 0.0),
-            "ram": snapshot.get("ram_percent", 0.0),
+            "ram_active": snapshot.get("ram_active", snapshot.get("ram_used", 0.0)),
             "net_up": (snapshot.get("net") or {}).get("tx_sec", 0.0),
             "net_down": (snapshot.get("net") or {}).get("rx_sec", 0.0),
             "disk_read": snapshot.get("disk_read_sec", 0.0),
             "disk_write": snapshot.get("disk_write_sec", 0.0),
         }
+        cutoff_ms = (time.time() - HISTORY_TTL_SECONDS) * 1000
         for key, value in values.items():
             series = self.history.setdefault(key, [])
             series.append([ts, round(float(value or 0.0), 3)])
             if len(series) > self.history_size:
                 del series[: len(series) - self.history_size]
+            if series and series[0][0] < cutoff_ms:
+                series[:] = [point for point in series if point[0] >= cutoff_ms]
 
     def load_history(self, data: Any) -> None:
         if not isinstance(data, dict):
             return
+        cutoff_ms = (time.time() - HISTORY_TTL_SECONDS) * 1000
         for key in HISTORY_KEYS:
             series = data.get(key)
             if not isinstance(series, list):
@@ -252,6 +259,7 @@ class ResourceSampler:
                     and len(point) >= 2
                     and isinstance(point[0], (int, float))
                     and isinstance(point[1], (int, float))
+                    and point[0] >= cutoff_ms
                 ):
                     cleaned.append([float(point[0]), float(point[1])])
             self.history[key] = cleaned

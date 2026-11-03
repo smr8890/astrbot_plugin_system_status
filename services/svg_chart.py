@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any
 from xml.sax.saxutils import escape
 
-from .utils import human_speed
+from .utils import human_bytes, human_speed
 
 DEFAULT_COLORS = ("#2ec7c9", "#b6a2de", "#84A0DF", "#2EC272", "#F2A65A")
 
@@ -31,6 +31,8 @@ def _as_points(raw: Any) -> list[tuple[float, float]]:
 def _format_axis(value: float, unit: str) -> str:
     if unit == "%":
         return f"{value:.0f}%"
+    if unit == "B":
+        return human_bytes(value)
     if unit == "B/s":
         parts = human_speed(value)
         return parts.replace("/s", "")
@@ -54,6 +56,7 @@ def render_line_chart(
     colors: tuple[str, ...] | list[str] = DEFAULT_COLORS,
     fixed_max: float | None = None,
     compact: bool = False,
+    show_points: bool = False,
 ) -> str:
     prepared: list[dict[str, Any]] = []
     all_points: list[tuple[float, float]] = []
@@ -168,8 +171,23 @@ def render_line_chart(
         )
 
     # Series paths.
+    peaks: list[tuple[float, float, str, str]] = []
     for index, item in enumerate(prepared):
         coords = [(x_coord(x), y_coord(y)) for x, y in item["points"]]
+        max_point = max(item["points"], key=lambda point: point[1])
+        peak_label = (
+            f"{max_point[1]:.1f}%"
+            if unit == "%"
+            else _format_axis(max_point[1], unit)
+        )
+        peaks.append(
+            (
+                x_coord(max_point[0]),
+                y_coord(max_point[1]),
+                item["color"],
+                peak_label,
+            )
+        )
         line_path = "M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in coords)
         base_y = y_coord(0)
         area_path = (
@@ -183,9 +201,47 @@ def render_line_chart(
             f'<path d="{line_path}" fill="none" stroke="{item["color"]}" stroke-width="2.2" '
             f'stroke-linecap="round" stroke-linejoin="round"/>'
         )
-        last_x, last_y = coords[-1]
+        if show_points:
+            for point_x, point_y in coords:
+                parts.append(
+                    f'<circle cx="{point_x:.2f}" cy="{point_y:.2f}" r="2.4" '
+                    f'fill="{item["color"]}"/>'
+                )
+        else:
+            last_x, last_y = coords[-1]
+            parts.append(
+                f'<circle cx="{last_x:.2f}" cy="{last_y:.2f}" r="3.2" '
+                f'fill="{item["color"]}"/>'
+            )
+
+    # Draw one rounded bubble for the peak of each series.
+    for marker_x, marker_y, marker_color, marker_label in peaks:
+        label_width = max(36.0, len(marker_label) * 6.8 + 16)
+        bubble_height = 20.0
+        bubble_bottom = marker_y - 8
+        bubble_top = bubble_bottom - bubble_height
+        bubble_x = min(
+            max(marker_x - label_width / 2, margin_left),
+            width - margin_right - label_width,
+        )
+        tail_x = min(max(marker_x, bubble_x + 8), bubble_x + label_width - 8)
         parts.append(
-            f'<circle cx="{last_x:.2f}" cy="{last_y:.2f}" r="3.2" fill="{item["color"]}"/>'
+            f'<path d="M {tail_x - 6:.2f} {bubble_bottom - 2:.2f} '
+            f'L {marker_x:.2f} {marker_y:.2f} '
+            f'L {tail_x + 6:.2f} {bubble_bottom - 2:.2f} Z" '
+            f'fill="{marker_color}"/>'
+        )
+        parts.append(
+            f'<rect x="{bubble_x:.2f}" y="{bubble_top:.2f}" '
+            f'width="{label_width:.2f}" height="{bubble_height:.2f}" '
+            f'rx="10" fill="{marker_color}" fill-opacity="0.95"/>'
+        )
+        parts.append(
+            f'<text x="{bubble_x + label_width / 2:.2f}" '
+            f'y="{bubble_top + bubble_height / 2 + 4:.2f}" '
+            f'text-anchor="middle" font-size="10.5" font-weight="700" '
+            f'fill="#ffffff" font-family="FZB, Noto Sans CJK SC, sans-serif">'
+            f"{escape(marker_label)}</text>"
         )
 
     parts.append("</svg>")
@@ -203,17 +259,23 @@ def build_monitor_charts(
                 "CPU",
                 [{"name": "CPU", "points": history.get("cpu", []), "color": palette[0]}],
                 unit="%",
-                fixed_max=100,
                 colors=palette,
+                show_points=True,
             )
         },
         {
             "svg": render_line_chart(
                 "RAM",
-                [{"name": "RAM", "points": history.get("ram", []), "color": palette[1]}],
-                unit="%",
-                fixed_max=100,
+                [
+                    {
+                        "name": "RAM",
+                        "points": history.get("ram_active", []),
+                        "color": palette[1],
+                    }
+                ],
+                unit="B",
                 colors=palette,
+                show_points=True,
             )
         },
         {
