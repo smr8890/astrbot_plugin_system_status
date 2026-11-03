@@ -46,6 +46,7 @@
 
 ```text
 /状态
+/status
 ```
 
 ### 资源监控图表
@@ -54,6 +55,7 @@
 
 ```text
 /状态监控
+/monitor
 ```
 
 ## 数据说明
@@ -68,4 +70,4 @@
 ## 许可与致谢
 
 - 卡片视觉、CSS、图标、背景和字体来源：[Yenai-Plugin](https://github.com/yeyang52/yenai-plugin)，遵循 GPL-3.0。
-- 本项目自身遵循仓库中的 AGPL-3.0 许可。
+- 本项目自身遵循 AGPL-3.0 许可。

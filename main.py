@@ -19,7 +19,7 @@ from .services.svg_chart import build_monitor_charts
     "astrbot_plugin_system_status",
     "smr8890",
     "生成系统状态卡片和资源监控图表，展示 Bot 运行状态、硬件资源、网络与磁盘使用情况。",
-    "1.2.0",
+    "1.3.0",
 )
 class SystemStatusPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -79,7 +79,7 @@ class SystemStatusPlugin(Star):
     async def _persist_history(self, data: dict[str, Any]) -> None:
         await self.put_kv_data("monitor_history", data)
 
-    @filter.command("状态")
+    @filter.command("状态", alias={"status"})
     async def status(self, event: AstrMessageEvent):
         """查看 AstrBot 系统状态卡片。"""
         data: dict[str, Any] | None = None
@@ -111,7 +111,7 @@ class SystemStatusPlugin(Star):
             # handler or a failed reply send cannot fall through to the LLM.
             event.stop_event()
 
-    @filter.command("状态监控")
+    @filter.command("状态监控", alias={"monitor"})
     async def monitor(self, event: AstrMessageEvent):
         """查看 CPU / RAM / 网络 / 磁盘 IO 监控图表。"""
         try:
