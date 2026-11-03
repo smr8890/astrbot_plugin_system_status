@@ -741,10 +741,15 @@ class SystemCollector:
                 platforms = list(getattr(manager, "platform_insts", []) or [])
 
         current_platform_id = ""
+        current_platform_type = ""
         try:
             current_platform_id = event.get_platform_id()
+            current_platform_type = event.get_platform_name()
         except Exception:
             pass
+        is_webchat_event = (
+            current_platform_id == "webchat" or current_platform_type == "webchat"
+        )
 
         bots: list[dict[str, Any]] = []
         for platform in platforms:
@@ -756,7 +761,8 @@ class SystemCollector:
             platform_id = str(getattr(meta, "id", "") or "")
             platform_type = str(getattr(meta, "name", "") or "")
             if platform_type == "webchat" or platform_id == "webchat":
-                continue
+                if not is_webchat_event:
+                    continue
             display_name = (
                 getattr(meta, "adapter_display_name", None)
                 or platform_type
@@ -767,6 +773,7 @@ class SystemCollector:
                 platform_label = f"{display_name} · {platform_id}"
             else:
                 platform_label = display_name
+            backend = str(identity.get("backend") or "").strip()
 
             conversation = (db_stats.get("conversations") or {}).get(
                 platform_id, {"total": 0, "group": 0, "private": 0}
@@ -811,6 +818,7 @@ class SystemCollector:
                     "status": STATUS_ICON_MAP.get(status, "11"),
                     "botVersion": f"AstrBot v{ASTRBOT_VERSION}",
                     "platform": platform_label,
+                    "backend": backend,
                     "botRunTime": _format_uptime_short(runtime),
                     "countContacts": {
                         "friend": self._count_chip(total_sessions, "会话"),
@@ -878,14 +886,16 @@ class SystemCollector:
 
     async def _platform_identity(self, platform: Any, meta: Any) -> dict[str, Any]:
         platform_id = str(getattr(meta, "id", "") or "")
+        platform_type = str(getattr(meta, "name", "") or "")
         cached = self._identity_cache.get(platform_id)
         if cached and time.time() - cached[0] < cached[1]:
-            return dict(cached[2])
+            cached_identity = dict(cached[2])
+            if platform_type != "aiocqhttp" or "backend" in cached_identity:
+                return cached_identity
 
-        platform_type = str(getattr(meta, "name", "") or "")
         name = str(cfg(self.config, "bot.name", "") or "").strip()
         avatar = str(cfg(self.config, "bot.avatar", "") or "").strip()
-        identity = {"name": name, "avatar": avatar}
+        identity = {"name": name, "avatar": avatar, "backend": ""}
         resolved = False
 
         try:
@@ -901,6 +911,20 @@ class SystemCollector:
                 if not identity["avatar"] and uid:
                     identity["avatar"] = (
                         f"https://q1.qlogo.cn/g?b=qq&s=0&nk={uid}"
+                    )
+                try:
+                    version_info = await asyncio.wait_for(
+                        client.call_action("get_version_info"), timeout=3
+                    )
+                except Exception:
+                    version_info = {}
+                app_name = str((version_info or {}).get("app_name") or "").strip()
+                app_version = str(
+                    (version_info or {}).get("app_version") or ""
+                ).strip()
+                if app_name:
+                    identity["backend"] = (
+                        f"{app_name} v{app_version}" if app_version else app_name
                     )
                 resolved = bool(identity["name"] or identity["avatar"])
             elif platform_type == "qq_official":

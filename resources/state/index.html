@@ -39,6 +39,12 @@
             <img src="{{ icons['platform'] }}">
             {{ bot.platform }}
           </span>
+          {% if bot.backend %}
+          <span class="backend">
+            <img src="{{ icons['服务器'] }}">
+            {{ bot.backend }}
+          </span>
+          {% endif %}
           <span class="botrunTime">
             <img src="{{ icons['时间'] }}">
             Bot已运行 {{ bot.botRunTime }}
