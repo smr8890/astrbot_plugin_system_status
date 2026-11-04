@@ -69,7 +69,7 @@ def _read_plugin_version(plugin_dir: Path) -> str:
             return version if version.startswith("v") else f"v{version}"
     except Exception:
         pass
-    return "v1.5.0"
+    return "v1.5.1"
 
 
 async def _query_database(db: Any) -> dict[str, Any]:
@@ -1125,7 +1125,7 @@ class SystemCollector:
         if not isinstance(low_colors, list):
             low_colors = [str(low_colors)]
 
-        mounts: list[tuple[str, str]] = [("/", "overlay")]
+        mounts: list[tuple[str, str]] = []
         try:
             for partition in psutil.disk_partitions(all=False):
                 mountpoint = partition.mountpoint
@@ -1133,11 +1133,28 @@ class SystemCollector:
                     continue
                 if mountpoint.startswith("/usr/share/zoneinfo"):
                     continue
-                if mountpoint == "/":
-                    continue
                 mounts.append((mountpoint, partition.fstype))
         except Exception:
             pass
+        if os.name != "nt" and not any(
+            mountpoint == "/" for mountpoint, _ in mounts
+        ):
+            root_fstype = "unknown"
+            try:
+                root_partition = next(
+                    (
+                        partition
+                        for partition in psutil.disk_partitions(all=True)
+                        if partition.mountpoint == "/"
+                    ),
+                    None,
+                )
+                if root_partition and root_partition.fstype:
+                    root_fstype = root_partition.fstype
+            except Exception:
+                pass
+            mounts.insert(0, ("/", root_fstype))
+        mounts.sort(key=lambda item: item[0] != "/")
 
         seen: set[tuple[int, int]] = set()
         disks: list[dict[str, Any]] = []

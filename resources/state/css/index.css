@@ -618,13 +618,24 @@ li {
 }
 .memory .right {
   flex: 1;
+  min-width: 0;
 }
 .memory .right .fs {
   display: flex;
+  min-width: 0;
   justify-content: space-between;
 }
 .memory .right .fs .name {
   color: #000;
+}
+.memory .right .fs .mount {
+  flex: 0 0 61.8%;
+  max-width: 61.8%;
+}
+.memory .right .fs .size {
+  flex: 0 0 38.2%;
+  white-space: nowrap;
+  text-align: right;
 }
 .memory .right .progress {
   background: #E6E7EB;
@@ -671,7 +682,7 @@ li {
 
 .HardDisk_li .mount {
   min-width: 15px;
-  max-width: 7em;
+  max-width: 10em;
   line-height: 25px;
   text-align: left;
 }
