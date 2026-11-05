@@ -21,10 +21,16 @@ except Exception:  # pragma: no cover - compatibility fallback
     ASTRBOT_VERSION = "4.x"
 
 try:
-    from astrbot.core.utils.astrbot_path import get_astrbot_data_path
+    from astrbot.core.utils.astrbot_path import (
+        get_astrbot_data_path,
+        get_astrbot_temp_path,
+    )
 except Exception:  # pragma: no cover
     def get_astrbot_data_path() -> str:
         return str(Path(__file__).resolve().parents[3])
+
+    def get_astrbot_temp_path() -> str:
+        return str(Path(__file__).resolve().parents[3] / "temp")
 
 
 STATUS_ICON_MAP = {
@@ -672,11 +678,19 @@ class SystemCollector:
         self.logger = logger
         self.plugin_version = _read_plugin_version(plugin_dir)
         now = time.time()
-        self._identity_cache: dict[str, tuple[float, float, dict[str, Any]]] = {
-            str(platform_id): (now, 300.0, dict(value))
-            for platform_id, value in (identity_cache or {}).items()
-            if isinstance(value, dict)
-        }
+        self._identity_cache: dict[str, tuple[float, float, dict[str, Any]]] = {}
+        for platform_id, value in (identity_cache or {}).items():
+            if not isinstance(value, dict):
+                continue
+            identity = dict(value)
+            avatar = str(identity.get("avatar") or "")
+            avatar_usable = avatar.startswith(
+                ("http://", "https://", "data:")
+            ) or Path(avatar).exists()
+            # Entries without a usable avatar should be retried quickly,
+            # otherwise a stale name-only cache hides a newly fetched avatar.
+            ttl = 300.0 if avatar and avatar_usable else 5.0
+            self._identity_cache[str(platform_id)] = (now, ttl, identity)
         self._process_uptime = self._get_process_uptime()
 
     def _get_process_uptime(self) -> float:
@@ -686,11 +700,20 @@ class SystemCollector:
             return 0.0
 
     def export_identity_cache(self) -> dict[str, dict[str, Any]]:
-        return {
-            platform_id: dict(entry[2])
-            for platform_id, entry in self._identity_cache.items()
-            if entry[1] >= 300 and entry[2].get("name")
-        }
+        exported: dict[str, dict[str, Any]] = {}
+        for platform_id, entry in self._identity_cache.items():
+            if entry[1] < 300 or not entry[2].get("name"):
+                continue
+            identity = dict(entry[2])
+            avatar = str(identity.get("avatar") or "")
+            if (
+                avatar
+                and not avatar.startswith(("http://", "https://", "data:"))
+                and not Path(avatar).exists()
+            ):
+                identity["avatar"] = ""
+            exported[platform_id] = identity
+        return exported
 
     async def collect(self, event: Any) -> dict[str, Any]:
         try:
@@ -965,6 +988,39 @@ class SystemCollector:
                     or getattr(me, "username", "")
                     or ""
                 )
+                # The Bot API does not include the bot photo in getMe, but
+                # getUserProfilePhotos can read the bot's own profile picture.
+                if not identity["avatar"]:
+                    get_profile_photos = getattr(
+                        client, "get_user_profile_photos", None
+                    )
+                    if get_profile_photos is not None:
+                        photos = await asyncio.wait_for(
+                            get_profile_photos(user_id=me.id, limit=1), timeout=3
+                        )
+                        photo_sets = getattr(photos, "photos", None) or []
+                        if photo_sets and photo_sets[0]:
+                            file = await asyncio.wait_for(
+                                client.get_file(photo_sets[0][-1].file_id),
+                                timeout=3,
+                            )
+                            suffix = (
+                                Path(getattr(file, "file_path", "") or "").suffix
+                                or ".jpg"
+                            )
+                            safe_platform_id = re.sub(
+                                r"[^A-Za-z0-9_.-]", "_", platform_id or "telegram"
+                            )
+                            avatar_path = (
+                                Path(get_astrbot_temp_path())
+                                / f"telegram_{safe_platform_id}_avatar{suffix}"
+                            )
+                            avatar_path.parent.mkdir(parents=True, exist_ok=True)
+                            await asyncio.wait_for(
+                                file.download_to_drive(custom_path=avatar_path),
+                                timeout=10,
+                            )
+                            identity["avatar"] = str(avatar_path)
                 resolved = bool(identity["name"])
             elif platform_type == "discord":
                 client = getattr(platform, "client", None)
