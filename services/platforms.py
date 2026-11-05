@@ -286,8 +286,11 @@ class PlatformCollector:
                         f"{app_name} v{app_version}" if app_version else app_name
                     )
                 resolved = bool(identity["name"] or identity["avatar"])
-            elif platform_type == "qq_official":
-                robot = getattr(getattr(platform, "client", None), "robot", None)
+            elif platform_type in {"qq_official", "qq_official_webhook"}:
+                try:
+                    robot = getattr(getattr(platform, "client", None), "robot", None)
+                except Exception:
+                    robot = None
                 if robot is not None:
                     identity["name"] = identity["name"] or str(
                         getattr(robot, "name", "") or ""
@@ -295,7 +298,27 @@ class PlatformCollector:
                     identity["avatar"] = identity["avatar"] or str(
                         getattr(robot, "avatar", "") or ""
                     )
-                    resolved = bool(identity["name"] or identity["avatar"])
+                if not identity["name"] or not identity["avatar"]:
+                    webhook_user = getattr(
+                        getattr(platform, "webhook_helper", None), "user", None
+                    )
+                    if isinstance(webhook_user, dict):
+                        webhook_name = str(
+                            webhook_user.get("username")
+                            or webhook_user.get("name")
+                            or ""
+                        )
+                        webhook_avatar = str(webhook_user.get("avatar") or "")
+                    else:
+                        webhook_name = str(
+                            getattr(webhook_user, "username", "")
+                            or getattr(webhook_user, "name", "")
+                            or ""
+                        )
+                        webhook_avatar = str(getattr(webhook_user, "avatar", "") or "")
+                    identity["name"] = identity["name"] or webhook_name
+                    identity["avatar"] = identity["avatar"] or webhook_avatar
+                resolved = bool(identity["name"] or identity["avatar"])
             elif platform_type == "telegram":
                 client = platform.get_client()
                 me = await asyncio.wait_for(client.get_me(), timeout=3)
@@ -341,15 +364,17 @@ class PlatformCollector:
                 user = getattr(client, "user", None)
                 if user is not None:
                     identity["name"] = identity["name"] or str(
-                        getattr(user, "name", "")
-                        or getattr(user, "display_name", "")
+                        getattr(user, "display_name", "")
+                        or getattr(user, "global_name", "")
+                        or getattr(user, "name", "")
                         or ""
                     )
                     avatar_obj = getattr(user, "display_avatar", None) or getattr(
                         user, "avatar", None
                     )
-                    if not identity["avatar"] and avatar_obj is not None:
-                        identity["avatar"] = str(getattr(avatar_obj, "url", avatar_obj))
+                    avatar_url = getattr(avatar_obj, "url", None)
+                    if not identity["avatar"] and avatar_url:
+                        identity["avatar"] = str(avatar_url)
                     resolved = bool(identity["name"] or identity["avatar"])
         except Exception:
             pass
