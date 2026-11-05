@@ -1,4 +1,10 @@
 {
+  "showAllAdapters": {
+    "description": "显示所有适配器",
+    "hint": "开启后显示所有运行中的平台适配器；关闭后只显示触发命令的适配器。",
+    "type": "bool",
+    "default": true
+  },
   "monitor": {
     "description": "状态监控",
     "type": "object",
@@ -18,6 +24,38 @@
       }
     }
   },
+  "bot": {
+    "description": "Bot 信息覆盖",
+    "type": "object",
+    "default": {},
+    "items": {
+      "name": {
+        "description": "Bot 名称",
+        "hint": "留空则自动获取；多平台时可统一覆盖显示名称。",
+        "type": "string",
+        "default": ""
+      },
+      "avatar": {
+        "description": "Bot 头像",
+        "hint": "填写图片 URL 或本地绝对路径；留空则自动获取。",
+        "type": "string",
+        "default": ""
+      }
+    }
+  },
+  "hostname": {
+    "description": "主机信息覆盖",
+    "type": "object",
+    "default": {},
+    "items": {
+      "override": {
+        "description": "主机名",
+        "hint": "Docker 容器内主机名可能是容器 ID，可在这里覆盖。",
+        "type": "string",
+        "default": ""
+      }
+    }
+  },
   "systemResources": {
     "description": "显示的系统资源",
     "hint": "选择状态卡片主硬件区显示的圆环，GPU 获取不到时会自动隐藏。",
@@ -34,6 +72,89 @@
       "SWAP",
       "GPU"
     ]
+  },
+  "chartsCfg": {
+    "description": "图表",
+    "type": "object",
+    "default": {},
+    "items": {
+      "show": {
+        "description": "在状态卡片中显示网络图表",
+        "type": "bool",
+        "default": true
+      },
+      "color": {
+        "description": "图表调色盘",
+        "type": "list",
+        "default": [
+          "#2ec7c9",
+          "#b6a2de"
+        ]
+      }
+    }
+  },
+  "psTestSites": {
+    "description": "网络测试",
+    "type": "object",
+    "default": {},
+    "items": {
+      "show": {
+        "description": "显示网络测试",
+        "type": "bool",
+        "default": true
+      },
+      "timeout": {
+        "description": "超时时间（毫秒）",
+        "type": "int",
+        "default": 5000
+      },
+      "concurNum": {
+        "description": "并发数量",
+        "type": "int",
+        "default": 5
+      },
+      "list": {
+        "description": "测试站点",
+        "type": "template_list",
+        "templates": {
+          "site": {
+            "name": "网站",
+            "display_item": "name",
+            "items": {
+              "name": {
+                "description": "显示名称",
+                "type": "string",
+                "default": ""
+              },
+              "url": {
+                "description": "网址",
+                "type": "string",
+                "default": ""
+              },
+              "useProxy": {
+                "description": "使用代理",
+                "type": "bool",
+                "default": false
+              }
+            }
+          }
+        },
+        "default": [
+          {
+            "__template_key": "site",
+            "name": "Baidu",
+            "url": "https://baidu.com",
+            "useProxy": false
+          },
+          {
+            "__template_key": "site",
+            "name": "Google",
+            "url": "https://google.com",
+            "useProxy": false
+          }
+        ]
+      }
+    }
   },
   "processLoad": {
     "description": "进程负载",
@@ -110,89 +231,6 @@
     "type": "bool",
     "default": true
   },
-  "psTestSites": {
-    "description": "网络测试",
-    "type": "object",
-    "default": {},
-    "items": {
-      "show": {
-        "description": "显示网络测试",
-        "type": "bool",
-        "default": true
-      },
-      "timeout": {
-        "description": "超时时间（毫秒）",
-        "type": "int",
-        "default": 5000
-      },
-      "concurNum": {
-        "description": "并发数量",
-        "type": "int",
-        "default": 5
-      },
-      "list": {
-        "description": "测试站点",
-        "type": "template_list",
-        "templates": {
-          "site": {
-            "name": "网站",
-            "display_item": "name",
-            "items": {
-              "name": {
-                "description": "显示名称",
-                "type": "string",
-                "default": ""
-              },
-              "url": {
-                "description": "网址",
-                "type": "string",
-                "default": ""
-              },
-              "useProxy": {
-                "description": "使用代理",
-                "type": "bool",
-                "default": false
-              }
-            }
-          }
-        },
-        "default": [
-          {
-            "__template_key": "site",
-            "name": "Baidu",
-            "url": "https://baidu.com",
-            "useProxy": false
-          },
-          {
-            "__template_key": "site",
-            "name": "Google",
-            "url": "https://google.com",
-            "useProxy": false
-          }
-        ]
-      }
-    }
-  },
-  "chartsCfg": {
-    "description": "图表",
-    "type": "object",
-    "default": {},
-    "items": {
-      "show": {
-        "description": "在状态卡片中显示网络图表",
-        "type": "bool",
-        "default": true
-      },
-      "color": {
-        "description": "图表调色盘",
-        "type": "list",
-        "default": [
-          "#2ec7c9",
-          "#b6a2de"
-        ]
-      }
-    }
-  },
   "style": {
     "description": "样式",
     "type": "object",
@@ -221,6 +259,32 @@
         "type": "string",
         "default": "#000"
       },
+      "botInfoColor": {
+        "description": "Bot 信息标签颜色",
+        "type": "object",
+        "default": {},
+        "items": {
+          "botVersion": {
+            "description": "版本标签颜色",
+            "type": "string",
+            "default": "#FBE0F3"
+          },
+          "platform": {
+            "description": "平台标签颜色",
+            "type": "string",
+            "default": "#F0EDF2"
+          },
+          "contacts": {
+            "description": "联系人标签颜色",
+            "type": "list",
+            "default": [
+              "#F1EDFE",
+              "#FDF1E6",
+              "#E9F4FC"
+            ]
+          }
+        }
+      },
       "progressBarColor": {
         "description": "进度条颜色",
         "type": "object",
@@ -247,64 +311,6 @@
             ]
           }
         }
-      },
-      "botInfoColor": {
-        "description": "Bot 信息标签颜色",
-        "type": "object",
-        "default": {},
-        "items": {
-          "botVersion": {
-            "description": "版本标签颜色",
-            "type": "string",
-            "default": "#FBE0F3"
-          },
-          "platform": {
-            "description": "平台标签颜色",
-            "type": "string",
-            "default": "#F0EDF2"
-          },
-          "contacts": {
-            "description": "联系人标签颜色",
-            "type": "list",
-            "default": [
-              "#F1EDFE",
-              "#FDF1E6",
-              "#E9F4FC"
-            ]
-          }
-        }
-      }
-    }
-  },
-  "bot": {
-    "description": "Bot 信息覆盖",
-    "type": "object",
-    "default": {},
-    "items": {
-      "name": {
-        "description": "Bot 名称",
-        "hint": "留空则自动获取；多平台时可统一覆盖显示名称。",
-        "type": "string",
-        "default": ""
-      },
-      "avatar": {
-        "description": "Bot 头像",
-        "hint": "填写图片 URL 或本地绝对路径；留空则自动获取。",
-        "type": "string",
-        "default": ""
-      }
-    }
-  },
-  "hostname": {
-    "description": "主机信息覆盖",
-    "type": "object",
-    "default": {},
-    "items": {
-      "override": {
-        "description": "主机名",
-        "hint": "Docker 容器内主机名可能是容器 ID，可在这里覆盖。",
-        "type": "string",
-        "default": ""
       }
     }
   },

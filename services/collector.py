@@ -758,6 +758,7 @@ class SystemCollector:
         is_webchat_event = (
             current_platform_id == "webchat" or current_platform_type == "webchat"
         )
+        show_all_adapters = bool(cfg(self.config, "showAllAdapters", True))
 
         bots: list[dict[str, Any]] = []
         for platform in platforms:
@@ -765,9 +766,20 @@ class SystemCollector:
                 meta = platform.meta()
             except Exception:
                 continue
-            identity = await self._platform_identity(platform, meta)
             platform_id = str(getattr(meta, "id", "") or "")
             platform_type = str(getattr(meta, "name", "") or "")
+            if not show_all_adapters:
+                matches_current_id = bool(
+                    current_platform_id and platform_id == current_platform_id
+                )
+                matches_current_type = bool(
+                    not current_platform_id
+                    and current_platform_type
+                    and platform_type == current_platform_type
+                )
+                if not (matches_current_id or matches_current_type):
+                    continue
+            identity = await self._platform_identity(platform, meta)
             if platform_type == "webchat" or platform_id == "webchat":
                 if not is_webchat_event:
                     continue
