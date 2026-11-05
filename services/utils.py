@@ -2,9 +2,53 @@ from __future__ import annotations
 
 import math
 from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+try:
+    from astrbot.core.config import VERSION as ASTRBOT_VERSION
+except Exception:  # pragma: no cover - compatibility fallback
+    ASTRBOT_VERSION = "4.x"
+
+try:
+    from astrbot.core.utils.astrbot_path import (
+        get_astrbot_data_path,
+        get_astrbot_temp_path,
+    )
+except Exception:  # pragma: no cover - compatibility fallback
+
+    def get_astrbot_data_path() -> str:
+        return str(Path(__file__).resolve().parents[3])
+
+    def get_astrbot_temp_path() -> str:
+        return str(Path(__file__).resolve().parents[3] / "temp")
 
 
 UNITS = ("B", "KB", "MB", "GB", "TB", "PB")
+
+
+def cfg(config: Any, path: str, default: Any = None) -> Any:
+    """Read a dotted-path value from an AstrBot config object.
+
+    Args:
+        config: AstrBot config object or mapping.
+        path: Dotted key path, for example ``monitor.interval``.
+        default: Value returned when the path is missing or empty.
+
+    Returns:
+        The configured value, or ``default`` when unavailable.
+    """
+    current: Any = config
+    for key in path.split("."):
+        if current is None:
+            return default
+        if hasattr(current, "get"):
+            current = current.get(key, default)
+        elif isinstance(current, dict):
+            current = current.get(key, default)
+        else:
+            return default
+    return default if current is None else current
 
 
 def _trim_number(value: float) -> str:
