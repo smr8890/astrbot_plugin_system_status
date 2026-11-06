@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import uuid
 from datetime import datetime
 from typing import Any
 from xml.sax.saxutils import escape
@@ -10,6 +9,16 @@ from .utils import human_bytes, human_speed
 
 DEFAULT_COLORS = ("#2ec7c9", "#b6a2de", "#84A0DF", "#2EC272", "#F2A65A")
 CHART_WINDOW_MS = 60 * 60 * 1000
+
+# ECharts markPoint default "pin" symbol path and geometry. Yenai uses the
+# ECharts default symbolSize of 50, so the normalized path is scaled by 25.
+MARK_POINT_PATH = (
+    "M-0.5421 -0.8857A0.6 0.6 0 1 1 0.5421 -0.8857"
+    "C0.3878 -0.5605 0 -0.42 0 0"
+    "C0 -0.42 -0.3878 -0.5605 -0.5421 -0.8857Z"
+)
+MARK_POINT_SCALE = 25
+MARK_POINT_LABEL_OFFSET = 26.1429
 
 
 def _as_points(raw: Any) -> list[tuple[float, float]]:
@@ -27,6 +36,86 @@ def _as_points(raw: Any) -> list[tuple[float, float]]:
             points.append((x, y))
     points.sort(key=lambda item: item[0])
     return points
+
+
+def _smooth_path(points: list[tuple[float, float]]) -> str:
+    """Build the ECharts-style smooth cubic Bezier path through all points.
+
+    Mirrors ECharts line smoothing with ``smooth: true`` (an effective factor
+    of 0.5). Control points are constrained to the current segment's bounding
+    box, so the curve passes through every sample and keeps peaks in place
+    while producing the narrow rising/falling strokes used by yenai-plugin.
+
+    Args:
+        points: Chart coordinates sorted by x.
+
+    Returns:
+        SVG path commands for the smoothed line.
+    """
+    if not points:
+        return ""
+    if len(points) == 1:
+        return f"M {points[0][0]:.2f} {points[0][1]:.2f}"
+
+    # Duplicate timestamps cannot be interpolated; keep the original shape.
+    if any(b[0] <= a[0] for a, b in zip(points, points[1:])):
+        return "M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in points)
+
+    smooth = 0.5
+    parts = [f"M {points[0][0]:.2f} {points[0][1]:.2f}"]
+    previous_control_x, previous_control_y = points[0]
+    for index in range(1, len(points)):
+        prev_x, prev_y = points[index - 1]
+        current_x, current_y = points[index]
+        if index + 1 >= len(points):
+            control_2_x, control_2_y = current_x, current_y
+            next_control_x, next_control_y = current_x, current_y
+        else:
+            next_x, next_y = points[index + 1]
+            span_x = next_x - prev_x
+            span_y = next_y - prev_y
+            prev_dx = current_x - prev_x
+            prev_dy = current_y - prev_y
+            next_dx = next_x - current_x
+            next_dy = next_y - current_y
+            prev_length = math.hypot(prev_dx, prev_dy)
+            next_length = math.hypot(next_dx, next_dy)
+            ratio = next_length / (next_length + prev_length)
+
+            control_2_x = current_x - span_x * smooth * (1 - ratio)
+            control_2_y = current_y - span_y * smooth * (1 - ratio)
+            next_control_y = current_y + span_y * smooth * ratio
+            next_control_x = current_x + span_x * smooth * ratio
+
+            # Constrain the outgoing control point to this segment.
+            next_control_x = min(next_control_x, max(next_x, current_x))
+            next_control_y = min(next_control_y, max(next_y, current_y))
+            next_control_x = max(next_control_x, min(next_x, current_x))
+            next_control_y = max(next_control_y, min(next_y, current_y))
+
+            offset_y = next_control_y - current_y
+            control_2_y = current_y - offset_y * prev_length / next_length
+            offset_x = next_control_x - current_x
+            control_2_x = current_x - offset_x * prev_length / next_length
+            control_2_x = min(control_2_x, max(prev_x, current_x))
+            control_2_y = min(control_2_y, max(prev_y, current_y))
+            control_2_x = max(control_2_x, min(prev_x, current_x))
+            control_2_y = max(control_2_y, min(prev_y, current_y))
+
+            offset_x = current_x - control_2_x
+            next_control_x = current_x + offset_x * next_length / prev_length
+            offset_y = current_y - control_2_y
+            next_control_y = current_y + offset_y * next_length / prev_length
+
+        parts.append(
+            f"C {previous_control_x:.2f} {previous_control_y:.2f} "
+            f"{control_2_x:.2f} {control_2_y:.2f} "
+            f"{current_x:.2f} {current_y:.2f}"
+        )
+        previous_control_x = next_control_x
+        previous_control_y = next_control_y
+
+    return " ".join(parts)
 
 
 def _format_axis(value: float, unit: str) -> str:
@@ -130,23 +219,11 @@ def render_line_chart(
         value = max(0.0, min(y_max, value))
         return margin_top + plot_height - value / y_max * plot_height
 
-    gradient_prefix = f"g-{uuid.uuid4().hex[:8]}"
     parts: list[str] = [
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
         f'width="100%" role="img" aria-label="{escape(title)}">',
-        "<defs>",
+        f'<rect x="0" y="0" width="{width}" height="{height}" fill="transparent"/>',
     ]
-    for index, item in enumerate(prepared):
-        parts.append(
-            f'<linearGradient id="{gradient_prefix}-{index}" x1="0" y1="0" x2="0" y2="1">'
-            f'<stop offset="0%" stop-color="{item["color"]}" stop-opacity="0.26"/>'
-            f'<stop offset="100%" stop-color="{item["color"]}" stop-opacity="0.02"/>'
-            "</linearGradient>"
-        )
-    parts.append("</defs>")
-    parts.append(
-        f'<rect x="0" y="0" width="{width}" height="{height}" fill="transparent"/>'
-    )
 
     # Title and legend.
     title_size = 20 if not compact else 18
@@ -197,11 +274,19 @@ def render_line_chart(
     for index, item in enumerate(prepared):
         coords = [(x_coord(x), y_coord(y)) for x, y in item["points"]]
         max_point = max(item["points"], key=lambda point: point[1])
-        peak_label = (
-            f"{max_point[1]:.1f}%"
-            if unit == "%"
-            else _format_axis(max_point[1], unit)
-        )
+        if unit == "%":
+            peak_label = f"{max_point[1]:.1f}%"
+        else:
+            # Match yenai's chart.js `by` formatter: 1 decimal, no space.
+            label_value = float(max_point[1])
+            label_units = ("B", "KB", "MB", "GB", "TB")
+            label_unit_index = 0
+            while (
+                label_value >= 1024 and label_unit_index < len(label_units) - 1
+            ):
+                label_value /= 1024
+                label_unit_index += 1
+            peak_label = f"{label_value:.1f}{label_units[label_unit_index]}"
         peaks.append(
             (
                 x_coord(max_point[0]),
@@ -210,14 +295,15 @@ def render_line_chart(
                 peak_label,
             )
         )
-        line_path = "M " + " L ".join(f"{x:.2f} {y:.2f}" for x, y in coords)
+        line_path = _smooth_path(coords)
         base_y = y_coord(0)
         area_path = (
             f"{line_path} L {coords[-1][0]:.2f} {base_y:.2f} "
             f"L {coords[0][0]:.2f} {base_y:.2f} Z"
         )
         parts.append(
-            f'<path d="{area_path}" fill="url(#{gradient_prefix}-{index})" stroke="none"/>'
+            f'<path d="{area_path}" fill="{item["color"]}" fill-opacity="0.18" '
+            f'stroke="none"/>'
         )
         parts.append(
             f'<path d="{line_path}" fill="none" stroke="{item["color"]}" stroke-width="2.2" '
@@ -236,34 +322,17 @@ def render_line_chart(
                 f'fill="{item["color"]}"/>'
             )
 
-    # Draw one rounded bubble for the peak of each series.
+    # Draw ECharts markPoint "pin" bubbles for the peak of each series.
     for marker_x, marker_y, marker_color, marker_label in peaks:
-        label_width = max(36.0, len(marker_label) * 6.8 + 16)
-        bubble_height = 20.0
-        bubble_bottom = marker_y - 8
-        bubble_top = bubble_bottom - bubble_height
-        bubble_x = min(
-            max(marker_x - label_width / 2, margin_left),
-            width - margin_right - label_width,
-        )
-        tail_x = min(max(marker_x, bubble_x + 8), bubble_x + label_width - 8)
         parts.append(
-            f'<path d="M {tail_x - 6:.2f} {bubble_bottom - 2:.2f} '
-            f'L {marker_x:.2f} {marker_y:.2f} '
-            f'L {tail_x + 6:.2f} {bubble_bottom - 2:.2f} Z" '
+            f'<g transform="translate({marker_x:.2f} {marker_y:.2f})">'
+            f'<path d="{MARK_POINT_PATH}" transform="scale({MARK_POINT_SCALE})" '
             f'fill="{marker_color}"/>'
-        )
-        parts.append(
-            f'<rect x="{bubble_x:.2f}" y="{bubble_top:.2f}" '
-            f'width="{label_width:.2f}" height="{bubble_height:.2f}" '
-            f'rx="10" fill="{marker_color}" fill-opacity="0.95"/>'
-        )
-        parts.append(
-            f'<text x="{bubble_x + label_width / 2:.2f}" '
-            f'y="{bubble_top + bubble_height / 2 + 4:.2f}" '
-            f'text-anchor="middle" font-size="10.5" font-weight="700" '
-            f'fill="#ffffff" font-family="FZB, Noto Sans CJK SC, sans-serif">'
+            f'<text x="0" y="-{MARK_POINT_LABEL_OFFSET:.4f}" text-anchor="middle" '
+            f'dominant-baseline="central" font-size="12" fill="#333333" '
+            f'font-family="FZB, Noto Sans CJK SC, sans-serif">'
             f"{escape(marker_label)}</text>"
+            f"</g>"
         )
 
     parts.append("</svg>")
