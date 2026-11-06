@@ -129,11 +129,58 @@ def _format_axis(value: float, unit: str) -> str:
     return f"{value:.1f}"
 
 
-def _format_time(ts_ms: float) -> str:
+def _format_time(ts_ms: float, *, with_seconds: bool = False) -> str:
+    fmt = "%H:%M:%S" if with_seconds else "%H:%M"
     try:
-        return datetime.fromtimestamp(ts_ms / 1000).strftime("%H:%M")
+        return datetime.fromtimestamp(ts_ms / 1000).strftime(fmt)
     except (OSError, ValueError):
         return "--"
+
+
+def _time_axis_ticks(
+    x_min: float, x_max: float, plot_width: float
+) -> list[float]:
+    """Return ECharts-like time-axis ticks aligned to clock boundaries.
+
+    Args:
+        x_min: Earliest timestamp in milliseconds.
+        x_max: Latest timestamp in milliseconds.
+        plot_width: Available plot width in pixels.
+
+    Returns:
+        Timestamps in milliseconds for the visible axis ticks.
+    """
+    span = max(1.0, x_max - x_min)
+    max_ticks = max(2, int(plot_width / 52))
+    intervals = (
+        1_000,
+        5_000,
+        10_000,
+        30_000,
+        60_000,
+        120_000,
+        300_000,
+        600_000,
+        900_000,
+        1_800_000,
+        3_600_000,
+        7_200_000,
+        10_800_000,
+        21_600_000,
+        43_200_000,
+        86_400_000,
+    )
+    interval = intervals[-1]
+    for candidate in intervals:
+        if span / candidate <= max_ticks:
+            interval = candidate
+            break
+
+    first = math.ceil(x_min / interval) * interval
+    if first > x_max:
+        return []
+    count = int((x_max - first) // interval) + 1
+    return [first + index * interval for index in range(count)]
 
 
 def render_line_chart(
@@ -206,8 +253,8 @@ def render_line_chart(
         58 if not compact else 52,
         int(widest_axis_label * 6.4) + 14,
     )
-    margin_right = 18
-    margin_top = 55 if not compact else 46
+    margin_right = 28
+    margin_top = 70 if not compact else 62
     margin_bottom = 30
     plot_width = max(20, width - margin_left - margin_right)
     plot_height = max(20, height - margin_top - margin_bottom)
@@ -257,21 +304,27 @@ def render_line_chart(
             f"{escape(label)}</text>"
         )
 
-    # X-axis labels.
-    for step in range(3):
-        ratio = step / 2
-        timestamp = x_min + (x_max - x_min) * ratio
+    # X-axis labels at ECharts-like clock boundaries.
+    axis_y = y_coord(0)
+    x_ticks = _time_axis_ticks(x_min, x_max, plot_width)
+    with_seconds = (x_max - x_min) < 120_000
+    for timestamp in x_ticks:
         x = x_coord(timestamp)
-        anchor = "start" if step == 0 else "end" if step == 2 else "middle"
+        anchor = "middle"
+        is_hour = datetime.fromtimestamp(timestamp / 1000).minute == 0
+        weight = ' font-weight="700"' if is_hour else ""
         parts.append(
-            f'<text x="{x:.2f}" y="{height - 9}" text-anchor="{anchor}" font-size="11" '
-            f'fill="#666666" font-family="FZB, Noto Sans CJK SC, sans-serif">'
-            f"{escape(_format_time(timestamp))}</text>"
+            f'<text x="{x:.2f}" y="{axis_y + 18:.2f}" text-anchor="{anchor}" '
+            f'font-size="11"{weight} fill="#666666" '
+            f'font-family="FZB, Noto Sans CJK SC, sans-serif">'
+            f"{escape(_format_time(timestamp, with_seconds=with_seconds))}</text>"
         )
 
-    # Series paths.
+    # Build series paths first, then draw all area fills before any line so
+    # both lines stay visible, matching ECharts' series rendering order.
     peaks: list[tuple[float, float, str, str]] = []
-    for index, item in enumerate(prepared):
+    rendered_series: list[dict[str, Any]] = []
+    for item in prepared:
         coords = [(x_coord(x), y_coord(y)) for x, y in item["points"]]
         max_point = max(item["points"], key=lambda point: point[1])
         if unit == "%":
@@ -296,24 +349,37 @@ def render_line_chart(
             )
         )
         line_path = _smooth_path(coords)
-        base_y = y_coord(0)
         area_path = (
-            f"{line_path} L {coords[-1][0]:.2f} {base_y:.2f} "
-            f"L {coords[0][0]:.2f} {base_y:.2f} Z"
+            f"{line_path} L {coords[-1][0]:.2f} {axis_y:.2f} "
+            f"L {coords[0][0]:.2f} {axis_y:.2f} Z"
         )
+        rendered_series.append(
+            {
+                "coords": coords,
+                "line_path": line_path,
+                "area_path": area_path,
+                "color": item["color"],
+            }
+        )
+
+    for item in rendered_series:
         parts.append(
-            f'<path d="{area_path}" fill="{item["color"]}" fill-opacity="0.18" '
-            f'stroke="none"/>'
+            f'<path d="{item["area_path"]}" fill="{item["color"]}" '
+            f'fill-opacity="0.7" stroke="none"/>'
         )
+    for item in rendered_series:
         parts.append(
-            f'<path d="{line_path}" fill="none" stroke="{item["color"]}" stroke-width="2.2" '
-            f'stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{item["line_path"]}" fill="transparent" '
+            f'stroke="{item["color"]}" stroke-width="2" '
+            f'stroke-linejoin="bevel"/>'
         )
+        coords = item["coords"]
         if show_points:
             for point_x, point_y in coords:
                 parts.append(
-                    f'<circle cx="{point_x:.2f}" cy="{point_y:.2f}" r="2.4" '
-                    f'fill="{item["color"]}"/>'
+                    f'<path d="M1 0A1 1 0 1 1 1 -0.0001" '
+                    f'transform="matrix(2,0,0,2,{point_x:.2f},{point_y:.2f})" '
+                    f'fill="#ffffff" stroke="{item["color"]}"/>'
                 )
         else:
             last_x, last_y = coords[-1]
@@ -321,6 +387,20 @@ def render_line_chart(
                 f'<circle cx="{last_x:.2f}" cy="{last_y:.2f}" r="3.2" '
                 f'fill="{item["color"]}"/>'
             )
+
+    # X-axis baseline and short downward tick marks, matching ECharts time axis.
+    parts.append(
+        f'<line x1="{margin_left}" y1="{axis_y + 0.5:.2f}" '
+        f'x2="{width - margin_right}" y2="{axis_y + 0.5:.2f}" '
+        f'stroke="#6E7079" stroke-width="1"/>'
+    )
+    for timestamp in x_ticks:
+        x = x_coord(timestamp)
+        parts.append(
+            f'<line x1="{x:.2f}" y1="{axis_y:.2f}" '
+            f'x2="{x:.2f}" y2="{axis_y + 5:.2f}" '
+            f'stroke="#6E7079" stroke-width="1"/>'
+        )
 
     # Draw ECharts markPoint "pin" bubbles for the peak of each series.
     for marker_x, marker_y, marker_color, marker_label in peaks:
