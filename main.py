@@ -111,7 +111,7 @@ class SystemStatusPlugin(Star):
             # handler or a failed reply send cannot fall through to the LLM.
             event.stop_event()
 
-    @filter.command("状态监控", alias={"monitor"})
+    @filter.command("状态监控", alias={"monitor", "监控"})
     async def monitor(self, event: AstrMessageEvent):
         """查看 CPU / RAM / 网络 / 磁盘 IO 监控图表。"""
         try:
