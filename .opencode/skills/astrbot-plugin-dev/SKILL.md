@@ -56,3 +56,12 @@ chore: 升级版本到 1.6.0
 - 用户明确说“提交”后再执行提交。
 - 用户说“拟定版本更新”时，先给出版本号和变更方案，等待确认后再修改版本文件。
 - 用户没有明确要求时，不升级版本号。
+
+## 版本号位置
+
+升级版本号时，以下位置必须同步修改：
+
+- `metadata.yaml`：`version` 字段。
+- `main.py`：`@register(...)` 的版本参数。
+- `services/collector.py`：`_read_plugin_version()` 中读取 `metadata.yaml` 失败时的回退版本号。
+- `CHANGELOG.md`：新增对应版本章节。
