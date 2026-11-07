@@ -28,7 +28,7 @@ def _read_plugin_version(plugin_dir: Path) -> str:
             return version if version.startswith("v") else f"v{version}"
     except Exception:
         pass
-    return "v1.7.0"
+    return "v1.7.1"
 
 
 class SystemCollector:
