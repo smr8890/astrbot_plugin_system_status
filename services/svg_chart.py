@@ -373,20 +373,15 @@ def render_line_chart(
             f'stroke="{item["color"]}" stroke-width="2" '
             f'stroke-linejoin="bevel"/>'
         )
-        coords = item["coords"]
+        # ECharts with `showSymbol: false` draws no symbols at all, including
+        # the last sample, so only emit markers when explicitly requested.
         if show_points:
-            for point_x, point_y in coords:
+            for point_x, point_y in item["coords"]:
                 parts.append(
                     f'<path d="M1 0A1 1 0 1 1 1 -0.0001" '
                     f'transform="matrix(2,0,0,2,{point_x:.2f},{point_y:.2f})" '
                     f'fill="#ffffff" stroke="{item["color"]}"/>'
                 )
-        else:
-            last_x, last_y = coords[-1]
-            parts.append(
-                f'<circle cx="{last_x:.2f}" cy="{last_y:.2f}" r="3.2" '
-                f'fill="{item["color"]}"/>'
-            )
 
     # X-axis baseline and short downward tick marks, matching ECharts time axis.
     parts.append(
