@@ -130,28 +130,105 @@ def _shell_version(shell: str) -> str:
 
 
 def terminal_display() -> str:
+    """Return the current shell name and version for the system info list.
+
+    Returns:
+        Display text such as ``bash 5.2.21``, or an empty string when no shell
+        can be determined.
+    """
     shell = os.environ.get("SHELL", "").strip()
+    if not shell and platform_module.system() == "Windows":
+        # cmd and Windows PowerShell do not set SHELL, so follow the launcher
+        # process chain like fastfetch does on Windows.
+        try:
+            process = psutil.Process()
+            for _ in range(6):
+                process = process.parent()
+                if process is None:
+                    break
+                name = process.name().lower()
+                if name.startswith("python"):
+                    continue
+                if name in {
+                    "pwsh.exe",
+                    "powershell.exe",
+                    "powershell_ise.exe",
+                    "cmd.exe",
+                    "bash.exe",
+                    "nu.exe",
+                    "zsh.exe",
+                    "fish.exe",
+                }:
+                    try:
+                        shell = process.exe()
+                    except (psutil.Error, OSError):
+                        shell = name
+                    break
+        except (psutil.Error, OSError):
+            shell = ""
+
     if not shell:
         return ""
+
     name = Path(shell).name
     lower = name.lower()
-    if lower in {"powershell", "powershell.exe", "pwsh", "pwsh.exe"}:
-        display_name = "PowerShell"
-    else:
+    display_name = {
+        "pwsh": "PowerShell",
+        "pwsh.exe": "PowerShell",
+        "powershell": "Windows PowerShell",
+        "powershell.exe": "Windows PowerShell",
+        "powershell_ise": "Windows PowerShell ISE",
+        "powershell_ise.exe": "Windows PowerShell ISE",
+        "cmd": "CMD",
+        "cmd.exe": "CMD",
+        "nu": "nushell",
+        "nu.exe": "nushell",
+    }.get(lower)
+    if not display_name:
         display_name = name[:-4] if lower.endswith(".exe") else name
     version = _shell_version(shell)
     return f"{display_name} {version}".strip() if version else display_name
 
 
 def cpu_brand() -> str:
+    """Return the CPU marketing name without clock suffix or trademark marks.
+
+    Linux reads ``/proc/cpuinfo`` while Windows reads the registry value used
+    by fastfetch and Node's ``os.cpus()``, so all platforms report the same
+    marketing name instead of a CPUID family/model identifier.
+
+    Returns:
+        Normalized CPU brand such as ``11th Gen Intel Core i5-11400H``.
+    """
+    brand = ""
     try:
         text = Path("/proc/cpuinfo").read_text(encoding="utf-8", errors="ignore")
         for line in text.splitlines():
             if line.lower().startswith("model name"):
-                return line.split(":", 1)[1].strip()
+                brand = line.split(":", 1)[1].strip()
+                break
     except Exception:
         pass
-    return platform_module.processor() or platform_module.machine() or "CPU"
+
+    if not brand and platform_module.system() == "Windows":
+        try:
+            import winreg
+
+            with winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE,
+                r"HARDWARE\DESCRIPTION\System\CentralProcessor\0",
+            ) as key:
+                brand = str(winreg.QueryValueEx(key, "ProcessorNameString")[0])
+        except Exception:
+            brand = ""
+
+    if not brand:
+        brand = platform_module.processor() or platform_module.machine() or "CPU"
+
+    # Drop the clock suffix from the model name; the caller appends it once.
+    brand = re.sub(r"\s*@\s*[\d.]+\s*GHz\s*$", "", brand, flags=re.IGNORECASE)
+    brand = brand.replace("(R)", "").replace("(TM)", "")
+    return brand.strip() or "CPU"
 
 
 def cpu_frequency_ghz() -> str:
@@ -331,7 +408,7 @@ def fastfetch_sync(
         "内存": ("\U000f046d", "#788760"),
         "包": ("\U000f03d6", "#F4A460"),
         "主机": ("\U000f0322", "#82df0e"),
-        "终端": ("\uf489", "#20B2AA"),
+        "Shell": ("\uf489", "#20B2AA"),
         "分辨率": ("\U000f0379", "#FF69B4"),
     }
     items: list[tuple[str, str]] = []
@@ -358,7 +435,7 @@ def fastfetch_sync(
 
     terminal = terminal_display()
     if terminal:
-        items.append(("终端", terminal))
+        items.append(("Shell", terminal))
 
     resolution = display_resolution()
     if resolution:
